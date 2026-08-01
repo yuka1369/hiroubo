@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b1020" />
+  <title>CallMe - 時間前に電話がかかってくるアラーム</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- メイン画面 -->
+  <main id="home" class="screen">
+    <header class="app-header">
+      <h1>📞 CallMe</h1>
+      <p class="tagline">時間前に電話がかかってくるアラーム</p>
+    </header>
+
+    <section class="add-card">
+      <h2>予定を追加</h2>
+      <form id="add-form">
+        <label>
+          <span>やること</span>
+          <input type="text" id="title" placeholder="例）会議、薬をのむ、出発" maxlength="40" required />
+        </label>
+
+        <label>
+          <span>予定の時刻</span>
+          <input type="time" id="time" required />
+        </label>
+
+        <label>
+          <span>何分前に電話する？</span>
+          <select id="lead">
+            <option value="0">ちょうどの時刻</option>
+            <option value="1">1分前</option>
+            <option value="3">3分前</option>
+            <option value="5" selected>5分前</option>
+            <option value="10">10分前</option>
+            <option value="15">15分前</option>
+            <option value="30">30分前</option>
+            <option value="60">1時間前</option>
+          </select>
+        </label>
+
+        <fieldset class="repeat">
+          <legend>繰り返し</legend>
+          <div class="days">
+            <label class="day"><input type="checkbox" value="1" /><span>月</span></label>
+            <label class="day"><input type="checkbox" value="2" /><span>火</span></label>
+            <label class="day"><input type="checkbox" value="3" /><span>水</span></label>
+            <label class="day"><input type="checkbox" value="4" /><span>木</span></label>
+            <label class="day"><input type="checkbox" value="5" /><span>金</span></label>
+            <label class="day"><input type="checkbox" value="6" /><span>土</span></label>
+            <label class="day"><input type="checkbox" value="0" /><span>日</span></label>
+          </div>
+          <p class="hint">何も選ばなければ「次にその時刻が来たとき1回だけ」鳴らします。</p>
+        </fieldset>
+
+        <button type="submit" class="primary">＋ 追加する</button>
+      </form>
+    </section>
+
+    <section class="list-card">
+      <h2>登録した予定</h2>
+      <ul id="list" class="reminder-list"></ul>
+      <p id="empty" class="empty">まだ予定がありません。上から追加してね。</p>
+    </section>
+
+    <section class="status-card">
+      <button id="enable-notify" class="ghost">🔔 通知を許可する</button>
+      <button id="test-call" class="ghost">▶ テスト着信を鳴らす</button>
+      <p class="warn" id="tab-warn">⚠️ このアプリはこのタブを開いている間だけ鳴ります。スマホに追加してバックグラウンドでも使う方法は <a href="#" id="show-help">こちら</a>。</p>
+    </section>
+  </main>
+
+  <!-- 着信画面 -->
+  <div id="call-screen" class="call-screen hidden">
+    <div class="call-inner">
+      <p class="call-status">CallMe からの着信…</p>
+      <div class="avatar">📞</div>
+      <h2 id="call-title" class="call-title">予定</h2>
+      <p id="call-sub" class="call-sub"></p>
+
+      <div class="call-actions">
+        <button id="decline" class="call-btn decline" aria-label="拒否">
+          <span class="icon">✕</span>
+          <small>あとで(5分)</small>
+        </button>
+        <button id="answer" class="call-btn answer" aria-label="応答">
+          <span class="icon">✓</span>
+          <small>出る</small>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 応答後メッセージ -->
+  <div id="answered" class="answered hidden">
+    <div class="answered-inner">
+      <h2 id="answered-title">⏰ 時間だよ！</h2>
+      <p id="answered-sub"></p>
+      <button id="answered-ok" class="primary">わかった！やる 💪</button>
+    </div>
+  </div>
+
+  <!-- ヘルプ -->
+  <div id="help" class="help hidden">
+    <div class="help-inner">
+      <h2>スマホで使うには</h2>
+      <ol>
+        <li>このページを Safari / Chrome で開く</li>
+        <li>共有メニュー →「ホーム画面に追加」</li>
+        <li>ホーム画面のアイコンから起動</li>
+        <li>「🔔 通知を許可する」を押す</li>
+      </ol>
+      <p class="hint">アプリを開いている（前面にある）ときが一番確実に鳴ります。マナーモードだと音が出ないことがあるので、大事な予定はマナーを解除してね。</p>
+      <button id="help-close" class="primary">閉じる</button>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
