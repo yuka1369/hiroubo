@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b1020" />
+  <title>ChainMake - 〇〇のあとは〇〇。習慣を鎖でつなぐ</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- ホーム -->
+  <main id="home" class="screen">
+    <header class="app-header">
+      <h1>🔗 ChainMake</h1>
+      <p class="tagline">〇〇のあとは、〇〇。<br />小さな行動を鎖でつないで、朝を「ベッドメイキング！」まで。</p>
+    </header>
+
+    <section class="list-card">
+      <div class="list-head">
+        <h2>マイチェーン</h2>
+        <button id="new-chain" class="add-btn">＋ 新しいチェーン</button>
+      </div>
+      <ul id="chain-list" class="chain-list"></ul>
+      <p id="empty" class="empty">まだチェーンがありません。<br />「＋ 新しいチェーン」から作ってみよう。</p>
+    </section>
+
+    <section class="status-card">
+      <p class="hint about">
+        <strong>チェーンメイクって？</strong><br />
+        「起きたら → カーテンを開ける → 布団をたたむ → ベッドを整える」のように、
+        <b>すでにやっている行動のあとに次の行動をくっつける</b>方法です。
+        きっかけ（トリガー）を決めておくと、意志の力にたよらず自然に体が動きます。
+      </p>
+    </section>
+
+    <footer class="foot">
+      <p class="hint">データはこの端末の中だけに保存されます（サーバー送信なし）。</p>
+    </footer>
+  </main>
+
+  <!-- 作成・編集 -->
+  <div id="editor" class="overlay hidden">
+    <div class="sheet">
+      <div class="sheet-head">
+        <h2 id="editor-title">新しいチェーン</h2>
+        <button id="editor-close" class="icon-btn" aria-label="閉じる">✕</button>
+      </div>
+
+      <form id="chain-form">
+        <label>
+          <span>チェーン名</span>
+          <input type="text" id="c-title" placeholder="例）朝のベッドメイキング" maxlength="40" required />
+        </label>
+
+        <label>
+          <span>きっかけ（トリガー）— これをしたら始める</span>
+          <input type="text" id="c-anchor" placeholder="例）ベッドから出たら" maxlength="40" />
+        </label>
+
+        <div class="steps-block">
+          <span class="steps-label">つなげる行動（上から順番に）</span>
+          <ul id="step-list" class="step-edit-list"></ul>
+          <button type="button" id="add-step" class="ghost small">＋ 行動を追加</button>
+          <p class="hint">短く・具体的に。「布団をたたむ」「机の上をリセット」など。最後の行動がゴールになります。</p>
+        </div>
+
+        <label>
+          <span>ゴールのかけ声（言い切りで！）</span>
+          <input type="text" id="c-cheer" placeholder="例）ベッドメイキング！" maxlength="30" />
+        </label>
+
+        <div class="editor-actions">
+          <button type="submit" class="primary">保存する</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 実行（フォーカス）モード -->
+  <div id="run" class="run hidden">
+    <div class="run-top">
+      <button id="run-quit" class="icon-btn light" aria-label="やめる">✕</button>
+      <div class="run-progress"><div id="run-bar" class="run-bar"></div></div>
+      <span id="run-count" class="run-count">1 / 3</span>
+    </div>
+
+    <div class="run-body">
+      <p class="run-cue">つぎのひとつ</p>
+      <h2 id="run-step" class="run-step">行動</h2>
+      <p id="run-next" class="run-next"></p>
+    </div>
+
+    <div class="run-actions">
+      <button id="run-skip" class="ghost">スキップ</button>
+      <button id="run-done" class="primary big">できた！ 👇 つぎへ</button>
+    </div>
+  </div>
+
+  <!-- 完了おめでとう -->
+  <div id="finish" class="overlay hidden">
+    <div class="sheet celebrate">
+      <div class="confetti">🎉</div>
+      <h2 id="finish-cheer">ベッドメイキング！</h2>
+      <p id="finish-sub">今日のチェーン、コンプリート！</p>
+      <div id="finish-streak" class="streak-big">🔥 1日連続</div>
+      <button id="finish-ok" class="primary">よし！</button>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
