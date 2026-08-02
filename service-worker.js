@@ -1,5 +1,5 @@
 /* オフラインでも起動できるように、必要なファイルをキャッシュする */
-const CACHE = 'callme-v1';
+const CACHE = 'tokimeki-v1';
 const ASSETS = [
   './',
   './index.html',

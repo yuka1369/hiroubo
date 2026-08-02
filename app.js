@@ -1,329 +1,330 @@
-/* CallMe — 時間前に電話がかかってくるアラーム
+/* ときめき片づけ — こんまり式 断捨離アプリ
+ * 服 → 本 → 書類 → 小物 → 思い出 の正しい順番で、ときめきチェック。
  * すべてブラウザ内で完結（サーバー不要）。データは localStorage に保存。
  */
 (() => {
   'use strict';
 
-  const STORE_KEY = 'callme.reminders.v1';
-  const WEEK = ['日', '月', '火', '水', '木', '金', '土'];
+  const STORE_KEY = 'konmari.tokimeki.v1';
 
-  // ---- 状態 ----
-  let reminders = load();
-  let ringing = null;        // 現在着信中のリマインダー
-  let audioCtx = null;
-  let ringTimer = null;      // 着信音のループ用
-  let vibrateTimer = null;
-  let wakeLock = null;
-  let autoStopTimer = null;
+  // ---- カテゴリー定義（こんまり式の順番） ----
+  const CATEGORIES = [
+    {
+      key: 'clothes', emoji: '👕', title: '服',
+      desc: '最初はいちばん決めやすい「服」から。家じゅうの服を、一か所に集めよう。',
+      hints: ['トップス（シャツ・ニットなど）', 'ボトムス（パンツ・スカート）', 'かける服（コート・ジャケット）', '靴下・ストッキング', '下着', 'バッグ', '小物（マフラー・ベルト・帽子）', '靴'],
+    },
+    {
+      key: 'books', emoji: '📚', title: '本',
+      desc: '本棚の本を、読みかけも未読も、全部いちど床に出そう。「いつか読む」の いつか はほぼ来ない。',
+      hints: ['一般（ふつうの本）', '実用書（参考書・レシピ本）', '観賞用（写真集など）', '雑誌'],
+    },
+    {
+      key: 'papers', emoji: '📄', title: '書類',
+      desc: '書類は「全部捨てる」が基本。残すのは “いま使う / しばらく必要 / ずっと必要” の3種だけ。',
+      hints: ['いま使っている書類', 'しばらく取っておくもの（保証書・契約書）', 'ずっと必要なもの（保険証券など）', 'ダイレクトメール・とっくに済んだ明細 → 手放す候補'],
+    },
+    {
+      key: 'komono', emoji: '🧴', title: '小物',
+      desc: '「なんとなく持っているもの」の宝庫。種類ごとに、少しずつ確実に。',
+      hints: ['CD・DVD', 'スキンケア・コスメ', 'アクセサリー', '貴重品（通帳・カード類）', '電子機器・ケーブル', '生活用品（文房具・薬・裁縫）', 'キッチン用品・食品', 'その他（趣味のものなど）'],
+    },
+    {
+      key: 'sentimental', emoji: '💌', title: '思い出',
+      desc: '最後の関門。写真・手紙・思い出の品。ここまで来たあなたなら、ときめきで選べるはず。',
+      hints: ['写真', '手紙・カード', '日記・アルバム', '記念品・プレゼント'],
+    },
+  ];
 
-  // ---- DOM ----
+  // ============ 状態 ============
+  let state = load();
+
+  // ============ DOM ============
   const $ = (id) => document.getElementById(id);
-  const listEl = $('list');
-  const form = $('add-form');
 
   // ============ 保存・読み込み ============
+  function freshState() {
+    return {
+      currentIndex: 0,
+      cats: CATEGORIES.map((c) => ({ key: c.key, gathered: false, done: false, items: [] })),
+      startedAt: Date.now(),
+    };
+  }
   function load() {
     try {
       const raw = localStorage.getItem(STORE_KEY);
-      return raw ? JSON.parse(raw) : [];
-    } catch { return []; }
+      if (!raw) return freshState();
+      const s = JSON.parse(raw);
+      // カテゴリー構成が変わっていたら作り直す（前方互換の最低限）
+      if (!s.cats || s.cats.length !== CATEGORIES.length) return freshState();
+      return s;
+    } catch { return freshState(); }
   }
   function save() {
-    localStorage.setItem(STORE_KEY, JSON.stringify(reminders));
+    localStorage.setItem(STORE_KEY, JSON.stringify(state));
   }
 
-  // ============ 次の着信時刻を計算 ============
-  // 予定時刻 - リード分 = 「電話が鳴る瞬間」
-  function computeNext(r, from) {
-    const [hh, mm] = r.time.split(':').map(Number);
-    const lead = (r.lead || 0) * 60000;
-    const base = new Date(from);
+  // ============ ヘルパー ============
+  const meta = (i) => CATEGORIES[i];
+  const cat = (i) => state.cats[i];
+  function keepCount(c) { return c.items.filter((x) => x.keep).length; }
+  function letCount(c) { return c.items.filter((x) => !x.keep).length; }
+  function isUnlocked(i) {
+    // 0番目は常に解放。以降は前が done なら解放。
+    if (i === 0) return true;
+    return state.cats[i - 1].done;
+  }
 
-    const makeCall = (dayOffset) => {
-      const d = new Date(base);
-      d.setHours(0, 0, 0, 0);
-      d.setDate(d.getDate() + dayOffset);
-      d.setHours(hh, mm, 0, 0);
-      return d.getTime() - lead; // 着信の瞬間
-    };
+  // ============ ホーム描画 ============
+  function renderHome() {
+    // 全体進捗（完了カテゴリー数ベース）
+    const doneN = state.cats.filter((c) => c.done).length;
+    const pct = Math.round((doneN / CATEGORIES.length) * 100);
+    $('overall-percent').textContent = pct + '%';
+    $('overall-bar').style.width = pct + '%';
 
-    if (r.days && r.days.length) {
-      for (let i = 0; i <= 8; i++) {
-        const d = new Date(base);
-        d.setDate(d.getDate() + i);
-        if (!r.days.includes(d.getDay())) continue;
-        const t = makeCall(i);
-        if (t > from + 500) return t;
-      }
-      return null;
+    const allDone = doneN === CATEGORIES.length;
+    if (allDone) {
+      $('overall-sub').textContent = '🎊 全カテゴリー完了！ ときめくものだけに囲まれた暮らしへ。';
+    } else {
+      const cur = meta(state.currentIndex);
+      $('overall-sub').textContent = `いまは「${cur.title}」の番。一つずつ、ときめきで選ぼう。`;
     }
 
-    // 単発：今日その時刻を過ぎていたら翌日
-    let t = makeCall(0);
-    if (t <= from + 500) t = makeCall(1);
-    return t;
-  }
-
-  function refreshTriggers() {
-    const now = Date.now();
-    let changed = false;
-    for (const r of reminders) {
-      if (r.next == null) {
-        r.next = computeNext(r, now);
-        changed = true;
-      }
-    }
-    if (changed) save();
-  }
-
-  // ============ 描画 ============
-  function render() {
-    listEl.innerHTML = '';
-    const sorted = [...reminders].sort((a, b) => (a.next || 0) - (b.next || 0));
-    for (const r of sorted) {
+    // 旅リスト
+    const ol = $('journey');
+    ol.innerHTML = '';
+    CATEGORIES.forEach((c, i) => {
+      const st = state.cats[i];
+      const unlocked = isUnlocked(i);
       const li = document.createElement('li');
-      li.className = 'reminder-item';
+      li.className = 'journey-item'
+        + (st.done ? ' is-done' : '')
+        + (!unlocked ? ' is-locked' : '')
+        + (i === state.currentIndex && !st.done && unlocked ? ' is-current' : '');
 
-      const repeatText = r.days && r.days.length
-        ? '毎週 ' + r.days.slice().sort().map((d) => WEEK[d]).join('・')
-        : '1回だけ';
-      const leadText = r.lead > 0 ? `${r.lead}分前に着信` : 'ちょうどに着信';
+      const status = st.done
+        ? `残${keepCount(st)}・手放${letCount(st)}`
+        : (unlocked ? 'いまここ' : 'ロック中');
+      const badge = st.done ? '✓' : (unlocked ? '' : '🔒');
 
       li.innerHTML = `
-        <div class="info">
-          <div class="r-title"></div>
-          <div class="r-meta"></div>
+        <div class="j-num">${i + 1}</div>
+        <div class="j-emoji">${c.emoji}</div>
+        <div class="j-body">
+          <div class="j-title"></div>
+          <div class="j-status"></div>
         </div>
-        <div class="r-time"></div>
-        <button class="del" aria-label="削除">🗑</button>`;
-      li.querySelector('.r-title').textContent = r.title;
-      li.querySelector('.r-meta').textContent = `${repeatText} ・ ${leadText}`;
-      li.querySelector('.r-time').textContent = r.time;
-      li.querySelector('.del').addEventListener('click', () => removeReminder(r.id));
-      listEl.appendChild(li);
-    }
-  }
+        <div class="j-badge">${badge}</div>`;
+      li.querySelector('.j-title').textContent = c.title;
+      li.querySelector('.j-status').textContent = status;
 
-  function removeReminder(id) {
-    reminders = reminders.filter((r) => r.id !== id);
-    save();
-    render();
-  }
-
-  // ============ 追加 ============
-  form.addEventListener('submit', (e) => {
-    e.preventDefault();
-    unlockAudio(); // 追加時のタップで音の許可を取っておく
-    const title = $('title').value.trim() || '予定';
-    const time = $('time').value;
-    if (!time) return;
-    const lead = parseInt($('lead').value, 10) || 0;
-    const days = [...document.querySelectorAll('.days input:checked')].map((c) => Number(c.value));
-
-    const r = { id: Date.now() + '-' + Math.random().toString(36).slice(2, 7), title, time, lead, days, next: null };
-    r.next = computeNext(r, Date.now());
-    reminders.push(r);
-    save();
-    render();
-
-    form.reset();
-    $('lead').value = String(lead); // リード時間は使い回すことが多いので残す
-  });
-
-  // ============ 監視ループ ============
-  function tick() {
-    if (ringing) return; // 着信中は追加で鳴らさない
-    const now = Date.now();
-    for (const r of reminders) {
-      if (r.next != null && now >= r.next) {
-        startCall(r);
-        break;
+      if (unlocked) {
+        li.addEventListener('click', () => openCategory(i));
+      } else {
+        li.addEventListener('click', () => {
+          const prev = meta(i - 1);
+          flash(`さきに「${prev.title}」を終わらせよう。順番が大切だよ。`);
+        });
       }
+      ol.appendChild(li);
+    });
+  }
+
+  // 軽いトースト
+  let flashTimer = null;
+  function flash(msg) {
+    let el = $('flash');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'flash';
+      el.className = 'flash';
+      document.body.appendChild(el);
     }
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(flashTimer);
+    flashTimer = setTimeout(() => el.classList.remove('show'), 2200);
   }
 
-  // ============ 着信 ============
-  function startCall(r) {
-    ringing = r;
-    $('call-title').textContent = r.title;
-    const when = r.lead > 0 ? `あと ${r.lead}分で「${r.time}」だよ` : `「${r.time}」の時間だよ`;
-    $('call-sub').textContent = when;
-    $('call-screen').classList.remove('hidden');
+  // ============ カテゴリー画面 ============
+  let openIndex = 0;
 
-    startRingtone();
-    startVibration();
-    notify(r);
-    requestWakeLock();
+  function openCategory(i) {
+    openIndex = i;
+    state.currentIndex = Math.max(state.currentIndex, i); // 一応追従
+    const c = meta(i);
+    const st = cat(i);
 
-    // 60秒放置したら自動で「あとで」
-    autoStopTimer = setTimeout(() => declineCall(), 60000);
+    $('cat-emoji').textContent = c.emoji;
+    $('cat-title').textContent = c.title;
+    $('cat-desc').textContent = c.desc;
+
+    const hints = $('gather-hints');
+    hints.innerHTML = '';
+    c.hints.forEach((h) => {
+      const li = document.createElement('li');
+      li.textContent = h;
+      hints.appendChild(li);
+    });
+
+    $('gathered').checked = st.gathered;
+    $('check-step').classList.toggle('hidden', !st.gathered);
+    $('gather-step').classList.toggle('is-collapsed', st.gathered);
+
+    $('item-name').value = '';
+    renderItems();
+
+    show('category');
+    window.scrollTo(0, 0);
   }
 
-  function endCall() {
-    stopRingtone();
-    stopVibration();
-    releaseWakeLock();
-    clearTimeout(autoStopTimer);
-    $('call-screen').classList.add('hidden');
+  function renderItems() {
+    const st = cat(openIndex);
+    const keeps = st.items.filter((x) => x.keep);
+    const lets = st.items.filter((x) => !x.keep);
+
+    $('keep-count').textContent = keeps.length;
+    $('let-count').textContent = lets.length;
+
+    fillList('keep-list', 'keep-empty', keeps);
+    fillList('let-list', 'let-empty', lets);
   }
 
-  function answerCall() {
-    if (!ringing) return;
-    const r = ringing;
-    endCall();
-    $('answered-title').textContent = `⏰ ${r.title}`;
-    $('answered-sub').textContent = r.lead > 0
-      ? `あと ${r.lead}分！ 準備を始めよう。`
-      : `いまがその時間！`;
-    $('answered').classList.remove('hidden');
-    finishReminder(r, false);
+  function fillList(listId, emptyId, arr) {
+    const ul = $(listId);
+    ul.innerHTML = '';
+    $(emptyId).style.display = arr.length ? 'none' : 'block';
+    arr.forEach((it) => {
+      const li = document.createElement('li');
+      li.className = 'item-row';
+      li.innerHTML = `<span class="item-name"></span><button class="item-del" aria-label="取り消す">×</button>`;
+      li.querySelector('.item-name').textContent = it.name;
+      li.querySelector('.item-del').addEventListener('click', () => {
+        const st = cat(openIndex);
+        st.items = st.items.filter((x) => x.id !== it.id);
+        save();
+        renderItems();
+      });
+      ul.appendChild(li);
+    });
   }
 
-  // 拒否＝5分後にもう一度（スヌーズ）
-  function declineCall() {
-    if (!ringing) return;
-    const r = ringing;
-    endCall();
-    ringing = null;
-    r.next = Date.now() + 5 * 60000; // 5分後に再着信
+  function addItem(keep) {
+    const input = $('item-name');
+    const name = input.value.trim();
+    if (!name) { input.focus(); return; }
+    const st = cat(openIndex);
+    st.items.push({ id: Date.now() + '-' + Math.random().toString(36).slice(2, 6), name, keep });
     save();
-    render();
+    input.value = '';
+    input.focus();
+    renderItems();
+    if (!keep) flash(`「${name}」、ありがとう。いってらっしゃい 👋`);
   }
 
-  function finishReminder(r, keepSnooze) {
-    ringing = null;
-    if (r.days && r.days.length) {
-      r.next = computeNext(r, Date.now() + 1000); // 繰り返しは次回へ
+  // ============ イベント ============
+  $('back-home').addEventListener('click', () => { renderHome(); show('home'); });
+
+  $('gathered').addEventListener('change', (e) => {
+    const st = cat(openIndex);
+    st.gathered = e.target.checked;
+    save();
+    $('check-step').classList.toggle('hidden', !st.gathered);
+    $('gather-step').classList.toggle('is-collapsed', st.gathered);
+    if (st.gathered) {
+      $('check-step').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      $('item-name').focus();
+    }
+  });
+
+  $('item-form').addEventListener('submit', (e) => { e.preventDefault(); addItem(true); });
+  $('btn-keep').addEventListener('click', () => addItem(true));
+  $('btn-let').addEventListener('click', () => addItem(false));
+
+  $('finish-cat').addEventListener('click', () => {
+    const st = cat(openIndex);
+    if (!st.gathered) { flash('まず「全部あつめた」にチェックしてね。'); return; }
+    st.done = true;
+    // 次のカテゴリーへ currentIndex を進める
+    if (openIndex + 1 < CATEGORIES.length) {
+      state.currentIndex = openIndex + 1;
+    }
+    save();
+    celebrate(openIndex);
+  });
+
+  // ============ お祝い ============
+  function celebrate(i) {
+    const st = cat(i);
+    const c = meta(i);
+    const allDone = state.cats.every((x) => x.done);
+
+    $('celebrate-emoji').textContent = allDone ? '🎊' : c.emoji;
+    if (allDone) {
+      $('celebrate-title').textContent = 'すべて完了！おめでとう 🎉';
+      $('celebrate-text').textContent = `ときめくものだけに囲まれた暮らしのはじまり。合計 ${totalKeep()} コを残し、${totalLet()} コを手放しました。`;
+      $('celebrate-next').textContent = 'ホームに戻る';
     } else {
-      reminders = reminders.filter((x) => x.id !== r.id); // 単発は消す
+      const next = meta(i + 1);
+      $('celebrate-title').textContent = `「${c.title}」おつかれさま！`;
+      $('celebrate-text').textContent = `残した ${keepCount(st)} コ・手放した ${letCount(st)} コ。つぎは「${next.title}」${next.emoji} に進もう。`;
+      $('celebrate-next').textContent = `「${next.title}」へ進む ›`;
     }
-    save();
-    render();
-  }
 
-  $('answer').addEventListener('click', answerCall);
-  $('decline').addEventListener('click', declineCall);
-  $('answered-ok').addEventListener('click', () => $('answered').classList.add('hidden'));
+    makeConfetti();
+    $('celebrate').classList.remove('hidden');
 
-  // ============ 着信音（Web Audioで合成／音源ファイル不要） ============
-  function unlockAudio() {
-    if (!audioCtx) {
-      const AC = window.AudioContext || window.webkitAudioContext;
-      if (AC) audioCtx = new AC();
-    }
-    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-  }
-
-  function playRingBurst() {
-    if (!audioCtx) return;
-    const now = audioCtx.currentTime;
-    // 「プルルル×2」の電話ベル風パターン
-    const beep = (start, freqA, freqB) => {
-      const g = audioCtx.createGain();
-      g.connect(audioCtx.destination);
-      g.gain.setValueAtTime(0.0001, start);
-      g.gain.exponentialRampToValueAtTime(0.6, start + 0.02);
-      g.gain.exponentialRampToValueAtTime(0.0001, start + 0.35);
-      [freqA, freqB].forEach((f) => {
-        const o = audioCtx.createOscillator();
-        o.type = 'sine';
-        o.frequency.value = f;
-        o.connect(g);
-        o.start(start);
-        o.stop(start + 0.36);
-      });
+    $('celebrate-next').onclick = () => {
+      $('celebrate').classList.add('hidden');
+      if (allDone || i + 1 >= CATEGORIES.length) {
+        renderHome();
+        show('home');
+      } else {
+        openCategory(i + 1);
+      }
     };
-    beep(now + 0.0, 440, 480);
-    beep(now + 0.4, 440, 480);
   }
 
-  function startRingtone() {
-    unlockAudio();
-    playRingBurst();
-    ringTimer = setInterval(playRingBurst, 2000); // 2秒ごとに鳴らし続ける
-  }
-  function stopRingtone() {
-    clearInterval(ringTimer);
-    ringTimer = null;
-  }
+  function totalKeep() { return state.cats.reduce((n, c) => n + keepCount(c), 0); }
+  function totalLet() { return state.cats.reduce((n, c) => n + letCount(c), 0); }
 
-  // ============ バイブ ============
-  function startVibration() {
-    if (!('vibrate' in navigator)) return;
-    const buzz = () => navigator.vibrate([600, 300, 600, 1000]);
-    buzz();
-    vibrateTimer = setInterval(buzz, 2500);
-  }
-  function stopVibration() {
-    clearInterval(vibrateTimer);
-    vibrateTimer = null;
-    if ('vibrate' in navigator) navigator.vibrate(0);
-  }
-
-  // ============ 通知 ============
-  function notify(r) {
-    if (!('Notification' in window) || Notification.permission !== 'granted') return;
-    try {
-      new Notification('📞 CallMe', {
-        body: r.lead > 0 ? `「${r.title}」まで あと${r.lead}分！` : `「${r.title}」の時間だよ！`,
-        tag: 'callme',
-        renotify: true,
-      });
-    } catch { /* SW経由でないと出せない環境もある */ }
-  }
-
-  $('enable-notify').addEventListener('click', async () => {
-    unlockAudio();
-    if (!('Notification' in window)) {
-      alert('この端末は通知に対応していません。アプリを開いている間は音とバイブで知らせます。');
-      return;
+  function makeConfetti() {
+    const box = $('confetti');
+    box.innerHTML = '';
+    const colors = ['#e8a0bf', '#a3c9a8', '#f6d186', '#89c2d9', '#f0a8a8'];
+    for (let n = 0; n < 40; n++) {
+      const p = document.createElement('i');
+      p.style.left = Math.random() * 100 + '%';
+      p.style.background = colors[n % colors.length];
+      p.style.animationDelay = (Math.random() * 0.6) + 's';
+      p.style.animationDuration = (1.6 + Math.random() * 1.2) + 's';
+      box.appendChild(p);
     }
-    const p = await Notification.requestPermission();
-    $('enable-notify').textContent = p === 'granted' ? '🔔 通知は許可済み' : '🔔 通知を許可する';
+  }
+
+  // ============ 画面切替 ============
+  function show(id) {
+    ['home', 'category'].forEach((s) => {
+      $(s).classList.toggle('hidden', s !== id);
+    });
+  }
+
+  // ============ リセット ============
+  $('reset-all').addEventListener('click', () => {
+    if (!confirm('片づけの記録を消して、最初からやり直しますか？')) return;
+    state = freshState();
+    save();
+    renderHome();
+    show('home');
   });
-
-  // ============ 画面ロック防止 ============
-  async function requestWakeLock() {
-    try {
-      if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen');
-    } catch { /* 失敗しても無視 */ }
-  }
-  function releaseWakeLock() {
-    try { if (wakeLock) { wakeLock.release(); wakeLock = null; } } catch {}
-  }
-
-  // ============ テスト・ヘルプ ============
-  $('test-call').addEventListener('click', () => {
-    unlockAudio();
-    startCall({ title: 'テスト着信', time: nowHHMM(), lead: 0, days: [], id: 'test' });
-  });
-  function nowHHMM() {
-    const d = new Date();
-    return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
-  }
-
-  $('show-help').addEventListener('click', (e) => { e.preventDefault(); $('help').classList.remove('hidden'); });
-  $('help-close').addEventListener('click', () => $('help').classList.add('hidden'));
 
   // ============ 初期化 ============
-  // どのタップでも音を解禁できるように
-  document.body.addEventListener('pointerdown', unlockAudio, { once: true });
-
-  if ('Notification' in window && Notification.permission === 'granted') {
-    $('enable-notify').textContent = '🔔 通知は許可済み';
-  }
-  // 既定の予定時刻を「今より少し先」に
-  (() => {
-    const d = new Date(Date.now() + 30 * 60000);
-    $('time').value = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
-  })();
-
   // Service Worker（オフライン対応）
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('service-worker.js').catch(() => {});
   }
 
-  refreshTriggers();
-  render();
-  setInterval(tick, 1000);
+  renderHome();
+  show('home');
 })();

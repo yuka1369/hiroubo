@@ -1,12 +1,12 @@
 {
-  "name": "CallMe - 時間前に電話がかかってくるアラーム",
-  "short_name": "CallMe",
-  "description": "予定の少し前に着信画面と着信音で知らせてくれる、ADHDにやさしいアラーム。",
+  "name": "ときめき片づけ — こんまり式 断捨離アプリ",
+  "short_name": "ときめき片づけ",
+  "description": "服→本→書類→小物→思い出の正しい順番で、ときめきチェックしながら片づけるアプリ。",
   "start_url": "./index.html",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#0b1020",
-  "theme_color": "#0b1020",
+  "background_color": "#f6f3ec",
+  "theme_color": "#f6f3ec",
   "icons": [
     {
       "src": "icon.svg",
