@@ -1,0 +1,18 @@
+{
+  "name": "掴め！牧歌ライフ！",
+  "short_name": "牧歌ライフ",
+  "description": "旦那様と畑をたがやし、しゅうかく物で研究をすすめ、ふたりの牧歌ライフを育てるほのぼの経営シミュレーション。",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fbf6e9",
+  "theme_color": "#8bbf6a",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

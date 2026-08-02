@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#8bbf6a" />
+  <title>掴め！牧歌ライフ！ - 旦那様と暮らして研究する</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="app">
+    <header class="app-header">
+      <h1>🌾 掴め！牧歌ライフ！</h1>
+      <p class="tagline">旦那様と畑をたがやし、研究をしてくらす。</p>
+    </header>
+
+    <!-- ステータスバー -->
+    <section class="status" id="status">
+      <div class="stat" title="しゅうかく物"><span class="ic">🧺</span><b id="s-produce">0</b><small>しゅうかく</small></div>
+      <div class="stat" title="コイン"><span class="ic">🪙</span><b id="s-coin">0</b><small>コイン</small></div>
+      <div class="stat" title="研究ポイント"><span class="ic">🔬</span><b id="s-rp">0</b><small>研究P</small></div>
+      <div class="stat" title="旦那様との仲"><span class="ic">❤️</span><b id="s-love">0</b><small>旦那様</small></div>
+      <div class="stat stat-day" title="日数と季節"><span class="ic" id="s-season-ic">🌱</span><b id="s-day">1</b><small id="s-season">はる</small></div>
+    </section>
+
+    <!-- 達成度 -->
+    <section class="progress-card">
+      <div class="progress-top">
+        <span>牧歌ライフ達成度</span>
+        <b id="p-pct">0%</b>
+      </div>
+      <div class="progress-bar"><i id="p-fill" style="width:0%"></i></div>
+    </section>
+
+    <!-- 旦那様 -->
+    <section class="darling-card">
+      <div class="darling-face" id="darling-face">🧑‍🌾</div>
+      <div class="darling-talk">
+        <p class="darling-bubble" id="darling-bubble">おはよう。今日もいっしょに、いい一日にしようね。</p>
+        <button id="tea-btn" class="btn tea">☕ 旦那様とお茶する</button>
+      </div>
+    </section>
+
+    <!-- 畑 -->
+    <section class="card">
+      <div class="card-head">
+        <h2>🌻 畑</h2>
+        <p class="hint">タネを選んで空いたマスをタップ。実ったらタップで収穫。</p>
+      </div>
+      <div class="crop-picker" id="crop-picker"></div>
+      <div class="field" id="field"></div>
+    </section>
+
+    <!-- 家畜小屋 -->
+    <section class="card" id="barn-card" hidden>
+      <div class="card-head"><h2>🏡 小屋</h2><p class="hint">お世話しなくても、じかんで実りが届きます。</p></div>
+      <div class="barn" id="barn"></div>
+    </section>
+
+    <!-- 研究ラボ -->
+    <section class="card">
+      <div class="card-head">
+        <h2>🔬 研究ラボ</h2>
+        <p class="hint">しゅうかく物を研究Pに変えて、暮らしを広げよう。</p>
+      </div>
+      <button id="study-btn" class="btn study">📖 研究する（🧺5 → 🔬1）</button>
+      <ul class="research" id="research"></ul>
+    </section>
+
+    <!-- ログ -->
+    <section class="card log-card">
+      <div class="card-head"><h2>📔 日記</h2></div>
+      <ul class="log" id="log"></ul>
+    </section>
+
+    <footer class="app-footer">
+      <button id="reset-btn" class="btn ghost">はじめから</button>
+      <span class="save-note">進みぐあいはこの端末に自動保存されます。</span>
+    </footer>
+  </main>
+
+  <!-- クリア画面 -->
+  <div id="win" class="win hidden">
+    <div class="win-inner">
+      <div class="win-emoji">🏡✨</div>
+      <h2>ふたりの牧歌ライフ、完成！</h2>
+      <p id="win-sub">研究をやりきって、旦那様との暮らしがまんぞくのかたちになりました。</p>
+      <p class="win-stats" id="win-stats"></p>
+      <button id="win-close" class="btn tea">これからもつづける</button>
+    </div>
+  </div>
+
+  <!-- 収穫アニメ用の入れ物 -->
+  <div id="fx" class="fx" aria-hidden="true"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

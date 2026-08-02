@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#cfe9f2"/>
+      <stop offset="1" stop-color="#eaf5e0"/>
+    </linearGradient>
+    <linearGradient id="hill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8bcf63"/>
+      <stop offset="1" stop-color="#5f9e3c"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#sky)"/>
+  <circle cx="384" cy="132" r="52" fill="#f4c95d"/>
+  <path d="M0 340 Q140 280 256 330 T512 320 V512 H0 Z" fill="url(#hill)"/>
+  <!-- おうち -->
+  <g>
+    <rect x="196" y="300" width="120" height="96" rx="10" fill="#fff3dd" stroke="#8a6a4a" stroke-width="6"/>
+    <path d="M182 306 L256 250 L330 306 Z" fill="#c0714a" stroke="#8a6a4a" stroke-width="6" stroke-linejoin="round"/>
+    <rect x="240" y="340" width="32" height="56" rx="5" fill="#8a6a4a"/>
+  </g>
+  <!-- 小麦 -->
+  <g stroke="#c9972f" stroke-width="8" stroke-linecap="round">
+    <path d="M120 420 V352"/><path d="M120 386 l-22 -16"/><path d="M120 386 l22 -16"/>
+    <path d="M392 420 V352"/><path d="M392 386 l-22 -16"/><path d="M392 386 l22 -16"/>
+  </g>
+</svg>
