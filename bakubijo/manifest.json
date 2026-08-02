@@ -1,0 +1,13 @@
+{
+  "name": "目指せ！爆美女！",
+  "short_name": "爆美女",
+  "description": "30日間の自分みがき育成ストーリー",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffe9f4",
+  "theme_color": "#ff77aa",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

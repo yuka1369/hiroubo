@@ -1,0 +1,178 @@
+:root{
+  --pink:#ff77aa;
+  --pink-deep:#ff3d84;
+  --purple:#a874ff;
+  --cream:#fff6fb;
+  --ink:#5a3a52;
+  --ink-soft:#9a7a92;
+  --card:#ffffff;
+  --shadow:0 8px 24px rgba(255,90,150,.18);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  font-family:"Hiragino Maru Gothic ProN","Hiragino Sans","Yu Gothic",system-ui,sans-serif;
+  color:var(--ink);
+  background:linear-gradient(160deg,#ffd9ec 0%,#ffe9f4 40%,#f0e4ff 100%);
+  min-height:100dvh;
+  overscroll-behavior:none;
+}
+.screen{
+  max-width:480px;margin:0 auto;padding:16px 16px 40px;
+  min-height:100dvh;
+}
+.screen[hidden]{display:none}
+b{font-weight:800}
+
+/* ---------- ボタン ---------- */
+.btn{
+  border:none;border-radius:999px;padding:12px 20px;font-size:16px;font-weight:800;
+  font-family:inherit;cursor:pointer;transition:transform .08s, box-shadow .15s;
+}
+.btn:active{transform:scale(.95)}
+.btn-primary{background:linear-gradient(135deg,var(--pink),var(--pink-deep));color:#fff;box-shadow:var(--shadow)}
+.btn-ghost{background:rgba(255,255,255,.7);color:var(--ink);border:2px solid #ffc7de}
+.btn-lg{width:100%;padding:16px;font-size:18px;margin-top:8px}
+.btn-sleep{background:linear-gradient(135deg,#b79bff,#8b6bff);color:#fff;padding:10px 14px;font-size:14px;box-shadow:0 6px 16px rgba(140,100,255,.3)}
+
+/* ---------- タイトル ---------- */
+.title-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:6px}
+.title-sparkle{font-size:22px;letter-spacing:6px;color:var(--purple);opacity:.7}
+.title-logo{font-size:34px;line-height:1.15;margin:4px 0;color:var(--pink-deep);text-shadow:2px 2px 0 #fff, 4px 4px 0 rgba(255,120,170,.25)}
+.title-logo .big{font-size:58px;display:inline-block;background:linear-gradient(135deg,#ff5aa0,#ff2d6f,#a15bff);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;text-shadow:none;filter:drop-shadow(2px 3px 0 #fff)}
+.title-sub{color:var(--ink-soft);font-weight:700;margin:0 0 4px}
+.title-hero{width:190px;height:190px;margin:6px 0}
+.title-hero svg,.intro-hero svg{width:100%;height:100%;filter:drop-shadow(0 10px 20px rgba(255,90,150,.3))}
+.title-note{font-size:11px;color:var(--ink-soft);opacity:.8;margin-top:14px}
+
+/* ---------- 名前入力 ---------- */
+.intro-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:10px}
+.intro-title{color:var(--pink-deep);margin:0}
+.intro-hero{width:150px;height:150px}
+.intro-label{font-weight:800;color:var(--ink-soft);margin-top:6px}
+.name-input{
+  width:100%;max-width:280px;padding:14px 18px;border-radius:16px;border:2px solid #ffc7de;
+  font-size:20px;text-align:center;font-family:inherit;font-weight:800;color:var(--ink);background:#fff;
+}
+.name-input:focus{outline:none;border-color:var(--pink)}
+
+/* ---------- 目標選択 ---------- */
+.goal-screen{display:flex;flex-direction:column;padding-top:24px}
+.goal-lead{color:var(--ink-soft);font-weight:700;font-size:13px;text-align:center;margin:2px 0 14px;line-height:1.6}
+.goal-list{display:flex;flex-direction:column;gap:12px}
+.goal-card{display:flex;gap:12px;align-items:center;background:#fff;border-radius:18px;padding:14px;box-shadow:var(--shadow);border:3px solid transparent;cursor:pointer;text-align:left;transition:transform .08s,border-color .15s}
+.goal-card:active{transform:scale(.97)}
+.goal-card:hover{border-color:#ffc7de}
+.goal-emoji{font-size:38px;line-height:1;flex:0 0 auto}
+.goal-body{flex:1;min-width:0;display:flex;flex-direction:column}
+.goal-name{display:block;font-weight:900;font-size:16px;color:var(--pink-deep)}
+.goal-desc{display:block;font-size:12px;font-weight:600;color:var(--ink-soft);line-height:1.5;margin-top:2px}
+.goal-focus{display:block;font-size:11px;font-weight:800;color:var(--purple);margin-top:5px}
+.rank-goal{display:inline-block;font-size:11px;font-weight:800;color:var(--purple);background:#f3ecff;padding:2px 8px;border-radius:8px;margin:2px 0}
+.rank-goal:empty{display:none}
+
+/* ---------- HUD ---------- */
+.hud{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.hud-day{display:flex;align-items:baseline;gap:4px;background:#fff;padding:6px 14px;border-radius:14px;box-shadow:var(--shadow)}
+.hud-day-label{font-size:11px;font-weight:800;color:var(--pink);letter-spacing:1px}
+.hud-day-num{font-size:24px;font-weight:900;color:var(--pink-deep)}
+.hud-day-max{font-size:12px;color:var(--ink-soft);font-weight:700}
+.hud-right{display:flex;gap:6px}
+.hud-chip{background:#fff;padding:6px 10px;border-radius:12px;font-size:13px;font-weight:700;box-shadow:var(--shadow)}
+
+/* ---------- ランクバナー ---------- */
+.rank-banner{display:flex;gap:12px;align-items:center;background:#fff;border-radius:20px;padding:12px;box-shadow:var(--shadow);margin-bottom:12px}
+.rank-avatar{width:76px;height:76px;flex:0 0 auto;border-radius:50%;background:linear-gradient(135deg,#ffe3f0,#f1e2ff);overflow:hidden}
+.rank-avatar svg{width:100%;height:100%}
+.rank-info{flex:1;min-width:0}
+.rank-name{font-weight:900;font-size:17px}
+.rank-title{font-size:14px;font-weight:800;color:var(--pink-deep);margin:1px 0 6px}
+.charm-row{display:flex;align-items:center;gap:6px}
+.charm-label{font-size:11px;font-weight:800;color:var(--purple)}
+.charm-bar{flex:1;height:12px;background:#f2e6f4;border-radius:8px;overflow:hidden}
+.charm-bar i{display:block;height:100%;width:0;border-radius:8px;background:linear-gradient(90deg,#ff9ec6,#ff2d6f,#a15bff);transition:width .5s}
+.charm-val{font-size:13px;font-weight:900;color:var(--pink-deep);min-width:26px;text-align:right}
+
+/* ---------- ステータス ---------- */
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.stat{background:#fff;border-radius:14px;padding:8px 10px;box-shadow:0 4px 12px rgba(255,90,150,.1)}
+.stat-top{display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:800;margin-bottom:4px}
+.stat-name{color:var(--ink)}
+.stat-num{color:var(--ink-soft)}
+.stat-bar{height:8px;background:#f2e6f4;border-radius:6px;overflow:hidden}
+.stat-bar i{display:block;height:100%;width:0;border-radius:6px;transition:width .4s}
+.stat.pop{animation:pop .4s}
+@keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.06)}100%{transform:scale(1)}}
+
+/* ---------- 行動力 ---------- */
+.ap-row{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.ap-label{font-size:12px;font-weight:800;color:var(--ink-soft)}
+.ap-dots{display:flex;gap:4px;flex:1}
+.ap-dot{width:16px;height:16px;border-radius:50%;background:#ffd0e4;box-shadow:inset 0 0 0 2px #ffb3d3}
+.ap-dot.on{background:radial-gradient(circle at 35% 30%,#fff,#ff5aa0);box-shadow:0 2px 6px rgba(255,90,150,.5)}
+
+/* ---------- 行動カード ---------- */
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.action{
+  background:#fff;border-radius:16px;padding:12px 10px;text-align:center;cursor:pointer;
+  box-shadow:0 4px 14px rgba(255,90,150,.12);border:2px solid transparent;transition:transform .08s,border-color .15s;
+  position:relative;
+}
+.action:active{transform:scale(.96)}
+.action.disabled{opacity:.45;pointer-events:none;filter:grayscale(.4)}
+.action-emoji{font-size:30px;line-height:1}
+.action-name{font-weight:900;font-size:14px;margin-top:4px}
+.action-tag{font-size:10px;font-weight:800;color:var(--ink-soft);margin-top:2px}
+.action-cost{position:absolute;top:6px;right:8px;font-size:10px;font-weight:800;color:var(--pink-deep)}
+
+/* ---------- ログ ---------- */
+.log-panel{background:rgba(255,255,255,.75);border-radius:16px;padding:12px;margin-bottom:16px}
+.log-title{font-weight:900;font-size:13px;color:var(--pink-deep);margin-bottom:6px}
+.log{display:flex;flex-direction:column;gap:5px;max-height:150px;overflow-y:auto;font-size:13px;line-height:1.5}
+.log-item{padding:6px 10px;background:#fff;border-radius:10px;font-weight:600}
+.log-item.good{color:#c81f6b}
+.log-item.bad{color:#8a6fb0}
+.log-item.story{background:linear-gradient(135deg,#fff3f9,#f3ecff);font-weight:800}
+
+.btn-reset{width:100%;font-size:13px;padding:10px;opacity:.85}
+
+/* ---------- オーバーレイ共通 ---------- */
+.overlay{position:fixed;inset:0;background:rgba(90,40,80,.45);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:20px;z-index:20;animation:fade .2s}
+.overlay[hidden]{display:none}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+
+/* 確認カード */
+.confirm-card{background:#fff;border-radius:24px;padding:24px;width:100%;max-width:340px;text-align:center;box-shadow:var(--shadow);animation:pop .25s}
+.confirm-emoji{font-size:52px}
+.confirm-name{font-size:20px;font-weight:900;margin-top:4px;color:var(--pink-deep)}
+.confirm-desc{color:var(--ink-soft);font-weight:700;font-size:14px;margin:6px 0}
+.confirm-cost{font-size:13px;font-weight:800;color:var(--purple);margin-bottom:14px}
+.confirm-btns{display:flex;gap:10px}
+.confirm-btns .btn{flex:1}
+
+/* 会話 */
+.dialogue{flex-direction:column;justify-content:flex-end;padding:0}
+.dlg-stage{flex:1;display:flex;align-items:flex-end;justify-content:center;width:100%;overflow:hidden;padding-bottom:6px}
+.dlg-avatar{width:210px;height:210px;animation:rise .35s ease-out}
+.dlg-avatar svg{width:100%;height:100%;filter:drop-shadow(0 8px 18px rgba(120,40,90,.4))}
+@keyframes rise{from{transform:translateY(30px);opacity:0}to{transform:translateY(0);opacity:1}}
+.dlg-box{background:#fff;border-radius:24px 24px 0 0;padding:18px 20px 30px;width:100%;max-width:480px;box-shadow:0 -6px 24px rgba(120,40,90,.3);min-height:150px;cursor:pointer}
+.dlg-name{font-weight:900;font-size:16px;color:var(--pink-deep);margin-bottom:6px}
+.dlg-name:empty{display:none}
+.dlg-text{font-size:16px;line-height:1.65;font-weight:600;min-height:52px}
+.dlg-choices{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.dlg-choice{background:linear-gradient(135deg,#fff0f7,#f3ecff);border:2px solid #ffc7de;border-radius:14px;padding:12px;font-weight:800;font-family:inherit;font-size:15px;color:var(--ink);cursor:pointer}
+.dlg-choice:active{transform:scale(.97)}
+.dlg-tap{text-align:right;font-size:12px;font-weight:800;color:var(--pink);margin-top:10px;animation:blink 1.2s infinite}
+@keyframes blink{0%,100%{opacity:.4}50%{opacity:1}}
+
+/* エンディング */
+.ending-card{background:#fff;border-radius:28px;padding:26px 22px;width:100%;max-width:360px;text-align:center;box-shadow:var(--shadow);animation:pop .35s}
+.ending-burst{color:var(--purple);letter-spacing:4px;font-size:18px}
+.ending-avatar{width:150px;height:150px;margin:6px auto}
+.ending-avatar svg{width:100%;height:100%;filter:drop-shadow(0 10px 20px rgba(255,90,150,.35))}
+.ending-rank{font-size:26px;font-weight:900;background:linear-gradient(135deg,#ff5aa0,#a15bff);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;margin:4px 0}
+.ending-name{font-weight:800;color:var(--ink-soft);margin-bottom:10px}
+.ending-stats{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:12px}
+.ending-stat{font-size:11px;font-weight:800;background:#fff0f7;color:var(--pink-deep);padding:4px 8px;border-radius:8px}
+.ending-msg{font-size:14px;font-weight:700;line-height:1.6;color:var(--ink);margin-bottom:16px;white-space:pre-line}

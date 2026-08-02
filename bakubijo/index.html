@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#ff77aa">
+<title>目指せ！爆美女！</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ===== タイトル画面 ===== -->
+<section id="title" class="screen title-screen">
+  <div class="title-sparkle">✧ ˖ °</div>
+  <h1 class="title-logo">目指せ！<br><span class="big">爆美女</span>！</h1>
+  <p class="title-sub">30日間の自分みがき育成ストーリー</p>
+  <div class="title-hero" id="titleHero"></div>
+  <button class="btn btn-primary btn-lg" id="startBtn">▶ はじめる</button>
+  <button class="btn btn-ghost" id="continueBtn" hidden>つづきから</button>
+  <p class="title-note">※ 登場する女の子はすべて架空のオリジナルキャラです</p>
+</section>
+
+<!-- ===== 名前入力 ===== -->
+<section id="intro" class="screen intro-screen" hidden>
+  <h2 class="intro-title">あなたのプロフィール</h2>
+  <div class="intro-hero" id="introHero"></div>
+  <label class="intro-label">なまえ</label>
+  <input id="nameInput" class="name-input" type="text" maxlength="8" placeholder="なまえを入力" value="ミライ">
+  <button class="btn btn-primary btn-lg" id="introGoBtn">つぎへ 💄</button>
+</section>
+
+<!-- ===== 目標（なりたい爆美女）選択 ===== -->
+<section id="goal" class="screen goal-screen" hidden>
+  <h2 class="intro-title">どんな爆美女を目指す？</h2>
+  <p class="goal-lead">なりたい雰囲気を選んでね。得意ステータスが少し伸びた状態でスタートするよ。</p>
+  <div class="goal-list" id="goalList"></div>
+</section>
+
+<!-- ===== メインゲーム ===== -->
+<section id="game" class="screen game-screen" hidden>
+
+  <header class="hud">
+    <div class="hud-day">
+      <span class="hud-day-label">DAY</span>
+      <span class="hud-day-num" id="hudDay">1</span>
+      <span class="hud-day-max">/ 30</span>
+    </div>
+    <div class="hud-right">
+      <div class="hud-chip" title="コイン">💰 <b id="hudMoney">0</b></div>
+      <div class="hud-chip" title="フォロワー">👥 <b id="hudFollowers">0</b></div>
+    </div>
+  </header>
+
+  <div class="rank-banner" id="rankBanner">
+    <div class="rank-avatar" id="playerAvatar"></div>
+    <div class="rank-info">
+      <div class="rank-name" id="playerName">ミライ</div>
+      <div class="rank-goal" id="goalChip"></div>
+      <div class="rank-title" id="rankTitle">🐣 これからのあなた</div>
+      <div class="charm-row">
+        <span class="charm-label">魅力</span>
+        <div class="charm-bar"><i id="charmFill"></i></div>
+        <span class="charm-val" id="charmVal">0</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="ap-row">
+    <span class="ap-label">今日の行動力</span>
+    <span class="ap-dots" id="apDots"></span>
+    <button class="btn btn-sleep" id="sleepBtn">😴 おやすみ（次の日へ）</button>
+  </div>
+
+  <div class="actions" id="actions"></div>
+
+  <div class="log-panel">
+    <div class="log-title">📖 できごと</div>
+    <div class="log" id="log"></div>
+  </div>
+
+  <button class="btn btn-ghost btn-reset" id="resetBtn">最初からやり直す</button>
+</section>
+
+<!-- ===== 行動確認モーダル ===== -->
+<div id="confirm" class="overlay" hidden>
+  <div class="confirm-card">
+    <div class="confirm-emoji" id="confirmEmoji">✨</div>
+    <div class="confirm-name" id="confirmName"></div>
+    <div class="confirm-desc" id="confirmDesc"></div>
+    <div class="confirm-cost" id="confirmCost"></div>
+    <div class="confirm-btns">
+      <button class="btn btn-ghost" id="confirmNo">やめる</button>
+      <button class="btn btn-primary" id="confirmYes">やる！</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 会話（ストーリー）モーダル ===== -->
+<div id="dialogue" class="overlay dialogue" hidden>
+  <div class="dlg-stage">
+    <div class="dlg-avatar" id="dlgAvatar"></div>
+  </div>
+  <div class="dlg-box" id="dlgBox">
+    <div class="dlg-name" id="dlgName"></div>
+    <div class="dlg-text" id="dlgText"></div>
+    <div class="dlg-choices" id="dlgChoices"></div>
+    <div class="dlg-tap" id="dlgTap">タップで進む ▸</div>
+  </div>
+</div>
+
+<!-- ===== エンディング ===== -->
+<div id="ending" class="overlay ending" hidden>
+  <div class="ending-card">
+    <div class="ending-burst">✦ ˖ ✧ ˖ ✦</div>
+    <div class="ending-avatar" id="endingAvatar"></div>
+    <div class="ending-rank" id="endingRank"></div>
+    <div class="ending-name" id="endingName"></div>
+    <div class="ending-stats" id="endingStats"></div>
+    <div class="ending-msg" id="endingMsg"></div>
+    <button class="btn btn-primary btn-lg" id="endingAgain">もう一度あそぶ 🔁</button>
+  </div>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
