@@ -1,0 +1,13 @@
+{
+  "name": "じすいっち — 推し発の自炊アプリ",
+  "short_name": "じすいっち",
+  "description": "推しのレシピで今週の献立を自動で組み、買い出しリストと金額まで出す自炊アプリ",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "background_color": "#0f1712",
+  "theme_color": "#1f6f43",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

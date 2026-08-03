@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#1f6f43" />
+  <title>じすいっち — 推し発の自炊アプリ</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="app-header">
+    <h1>🍳 じすいっち</h1>
+    <p class="tagline">推しのレシピで、今週のごはんを自動でくむ</p>
+  </header>
+
+  <!-- ========== 今週の献立 ========== -->
+  <main id="tab-plan" class="screen">
+    <section class="card">
+      <h2>今週の献立を推薦</h2>
+      <p class="hint">
+        平日は<b>簡単＆栄養</b>で朝・昼・夜、土日は<b>30分でできる冷凍ストック・作り置き</b>を提案します。
+      </p>
+
+      <label class="field">
+        <span>週のはじまり（月曜）</span>
+        <input type="date" id="week-start" />
+      </label>
+
+      <label class="field">
+        <span>予算のめやす（1週間・任意）</span>
+        <div class="inline">
+          <input type="number" id="budget" placeholder="例）5000" min="0" step="500" inputmode="numeric" />
+          <span class="unit">円</span>
+        </div>
+      </label>
+
+      <label class="field checkbox">
+        <input type="checkbox" id="use-creators-only" />
+        <span>登録した推しのレシピだけで組む</span>
+      </label>
+
+      <div class="btn-row">
+        <button id="recommend" class="primary">✨ 今週の献立を推薦する</button>
+        <button id="clear-plan" class="ghost">クリア</button>
+      </div>
+      <p id="plan-budget-note" class="note"></p>
+    </section>
+
+    <section id="plan-list" class="plan-week"></section>
+
+    <section class="card sticky-cta hidden" id="decide-card">
+      <div class="decide-summary">
+        <div>
+          <div class="decide-label">この献立で決定すると</div>
+          <div class="decide-cost"><span id="plan-total">¥0</span> <small>/ 週</small></div>
+        </div>
+        <button id="goto-shopping" class="primary">🛒 買い出しリストを作る</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- ========== レシピ ========== -->
+  <main id="tab-recipes" class="screen hidden">
+    <section class="card">
+      <h2>レシピ</h2>
+      <div class="chips" id="cat-filter"></div>
+    </section>
+    <section id="recipe-list" class="recipe-grid"></section>
+
+    <section class="card">
+      <details>
+        <summary>＋ レシピを自分で追加</summary>
+        <form id="recipe-form" class="stack">
+          <label class="field"><span>料理名</span><input id="r-name" required maxlength="40" placeholder="例）鶏むねのやわらか蒸し" /></label>
+          <label class="field"><span>カテゴリ</span><select id="r-cat"></select></label>
+          <label class="field"><span>推し（任意）</span><select id="r-creator"></select></label>
+          <div class="inline-fields">
+            <label class="field"><span>時間(分)</span><input id="r-time" type="number" min="1" value="15" inputmode="numeric" /></label>
+            <label class="field"><span>人数</span><input id="r-servings" type="number" min="1" value="2" inputmode="numeric" /></label>
+            <label class="field"><span>kcal/人</span><input id="r-kcal" type="number" min="0" value="400" inputmode="numeric" /></label>
+          </div>
+          <div class="inline-fields">
+            <label class="field checkbox"><input id="r-freeze" type="checkbox" /><span>冷凍・作り置きOK</span></label>
+            <label class="field checkbox"><input id="r-nutri" type="checkbox" /><span>栄養バランス◎</span></label>
+          </div>
+          <fieldset class="mealtypes">
+            <legend>向いてる食事</legend>
+            <label class="day"><input type="checkbox" class="r-meal" value="breakfast" /><span>朝</span></label>
+            <label class="day"><input type="checkbox" class="r-meal" value="lunch" /><span>昼</span></label>
+            <label class="day"><input type="checkbox" class="r-meal" value="dinner" checked /><span>夜</span></label>
+          </fieldset>
+          <label class="field"><span>材料と値段（1行1つ： 名前, 量, 単位, 円）</span>
+            <textarea id="r-ingredients" rows="4" placeholder="鶏むね肉, 200, g, 160&#10;塩こうじ, 15, g, 20&#10;ねぎ, 0.5, 本, 30"></textarea>
+          </label>
+          <button type="submit" class="primary">＋ レシピを追加</button>
+        </form>
+      </details>
+    </section>
+  </main>
+
+  <!-- ========== 推し（クリエイター） ========== -->
+  <main id="tab-creators" class="screen hidden">
+    <section class="card">
+      <h2>推しを登録</h2>
+      <p class="hint">好きなYouTuber・インスタを登録して、どのカテゴリのレシピ担当かを決めておくと、献立の推薦に反映されます。</p>
+      <form id="creator-form" class="stack">
+        <label class="field"><span>名前・チャンネル名</span><input id="c-name" required maxlength="40" placeholder="例）リュウジのバズレシピ" /></label>
+        <div class="inline-fields">
+          <label class="field"><span>プラットフォーム</span>
+            <select id="c-platform">
+              <option value="youtube">YouTube</option>
+              <option value="instagram">Instagram</option>
+              <option value="tiktok">TikTok</option>
+              <option value="other">その他</option>
+            </select>
+          </label>
+          <label class="field"><span>@ハンドル/URL（任意）</span><input id="c-handle" placeholder="@handle または URL" /></label>
+        </div>
+        <fieldset class="cat-picker">
+          <legend>担当カテゴリ（複数可）</legend>
+          <div id="creator-cats" class="chips"></div>
+        </fieldset>
+        <button type="submit" class="primary">＋ 推しを登録</button>
+      </form>
+    </section>
+    <section id="creator-list" class="creator-list"></section>
+  </main>
+
+  <!-- ========== 買い出し ========== -->
+  <main id="tab-shopping" class="screen hidden">
+    <section class="card">
+      <h2>買い出しリスト</h2>
+      <p id="shopping-empty" class="empty">まだ献立が決まっていません。「今週の献立」で推薦してね。</p>
+      <div id="shopping-body" class="hidden">
+        <div class="total-banner">
+          <span>合計</span>
+          <strong id="shopping-total">¥0</strong>
+        </div>
+        <ul id="shopping-list" class="shopping-list"></ul>
+        <div class="btn-row">
+          <button id="copy-list" class="ghost">📋 リストをコピー</button>
+          <button id="uncheck-all" class="ghost">チェックをリセット</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ========== タブバー ========== -->
+  <nav class="tabbar">
+    <button class="tab-btn active" data-tab="plan"><span>🗓️</span>献立</button>
+    <button class="tab-btn" data-tab="recipes"><span>🍽️</span>レシピ</button>
+    <button class="tab-btn" data-tab="creators"><span>⭐</span>推し</button>
+    <button class="tab-btn" data-tab="shopping"><span>🛒</span>買い出し</button>
+  </nav>
+
+  <!-- レシピ差し替え用モーダル -->
+  <div id="swap-modal" class="modal hidden">
+    <div class="modal-inner">
+      <div class="modal-head">
+        <h3 id="swap-title">別のレシピにする</h3>
+        <button id="swap-close" class="icon-btn" aria-label="閉じる">✕</button>
+      </div>
+      <div id="swap-options" class="swap-options"></div>
+    </div>
+  </div>
+
+  <script src="recipes.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
