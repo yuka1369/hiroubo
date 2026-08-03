@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b1020" />
+  <title>発信マネージャー</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="icon.svg" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="screen">
+    <header class="app-header">
+      <h1>📣 発信マネージャー</h1>
+      <p class="tagline">YouTube / X / note / Instagram を<br>林インターンメソッドで伸ばす</p>
+    </header>
+
+    <!-- ========== ホーム ========== -->
+    <section id="tab-home" class="tab">
+      <div class="hero-card">
+        <div class="hero-top">
+          <div>
+            <p class="hero-date" id="homeDate">—</p>
+            <p class="hero-hello" id="homeHello">今日も1発信、いこう。</p>
+          </div>
+          <div class="streak">
+            <span class="streak-num" id="streakNum">0</span>
+            <span class="streak-label">連続発信日</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="list-card">
+        <h2>🔥 今日の林メソッド</h2>
+        <ul class="check-list" id="dailyChecklist"></ul>
+        <p class="hint">3つ全部できたら今日はクリア。小さくても「出す」ことが信用になる。</p>
+      </div>
+
+      <div class="list-card">
+        <h2>📊 いまの数字</h2>
+        <div class="stat-grid" id="statGrid"></div>
+      </div>
+
+      <div class="list-card">
+        <h2>🗓 直近の予定</h2>
+        <ul class="reminder-list" id="upcomingList"></ul>
+        <p class="empty">予定した投稿はまだありません。</p>
+      </div>
+    </section>
+
+    <!-- ========== 投稿 ========== -->
+    <section id="tab-posts" class="tab hidden">
+      <div class="add-card">
+        <h2 id="postFormTitle">✍️ 発信ネタを追加</h2>
+        <form id="postForm">
+          <input type="hidden" id="postId" />
+          <label>
+            <span>タイトル / ひとことネタ</span>
+            <input type="text" id="postTitle" placeholder="例: 個人開発1週間でやったこと" required />
+          </label>
+
+          <fieldset class="repeat">
+            <legend>どこに出す？（1ネタ4展開）</legend>
+            <div class="platforms" id="platformPicker"></div>
+          </fieldset>
+
+          <label>
+            <span>ステータス</span>
+            <select id="postStatus">
+              <option value="idea">💡 アイデア</option>
+              <option value="draft">📝 下書き</option>
+              <option value="scheduled">🗓 予約</option>
+              <option value="done">✅ 公開済み</option>
+            </select>
+          </label>
+
+          <label>
+            <span>日付（予約 / 公開日）</span>
+            <input type="date" id="postDate" />
+          </label>
+
+          <label>
+            <span>メモ（切り口・フック）</span>
+            <input type="text" id="postMemo" placeholder="例: 冒頭の3秒でつまずいた話から入る" />
+          </label>
+
+          <button type="submit" class="primary" id="postSubmit">追加する</button>
+          <button type="button" class="ghost hidden" id="postCancel">キャンセル</button>
+        </form>
+      </div>
+
+      <div class="board" id="board"></div>
+    </section>
+
+    <!-- ========== 数字 ========== -->
+    <section id="tab-metrics" class="tab hidden">
+      <div class="add-card">
+        <h2>📈 フォロワーを記録</h2>
+        <form id="metricForm">
+          <label>
+            <span>プラットフォーム</span>
+            <select id="metricPlatform"></select>
+          </label>
+          <label>
+            <span>フォロワー / 登録者数</span>
+            <input type="text" inputmode="numeric" id="metricValue" placeholder="例: 1200" required />
+          </label>
+          <label>
+            <span>日付</span>
+            <input type="date" id="metricDate" />
+          </label>
+          <button type="submit" class="primary">記録する</button>
+        </form>
+        <p class="hint">週1で記録すると、伸びの「型」が見えてきます。</p>
+      </div>
+
+      <div class="list-card">
+        <h2>成長グラフ</h2>
+        <div id="charts"></div>
+      </div>
+    </section>
+
+    <!-- ========== メソッド ========== -->
+    <section id="tab-method" class="tab hidden">
+      <div class="hero-card method-hero">
+        <h2>🎓 林インターンメソッド</h2>
+        <p class="method-lead">「優秀なインターン」のように毎日ちゃんと手を動かし、報告する。<br>個人開発を伸ばすための5つの型。</p>
+      </div>
+
+      <div class="list-card">
+        <ol class="method-list" id="methodList"></ol>
+      </div>
+
+      <div class="list-card">
+        <h2>📅 週1の振り返り</h2>
+        <ul class="check-list" id="weeklyChecklist"></ul>
+        <p class="hint">日曜の夜に3分だけ。数字と型を見直すのがメソッドの心臓部。</p>
+      </div>
+    </section>
+  </div>
+
+  <!-- ========== ボトムナビ ========== -->
+  <nav class="bottom-nav">
+    <button class="nav-btn active" data-tab="home"><span>🏠</span>ホーム</button>
+    <button class="nav-btn" data-tab="posts"><span>📝</span>投稿</button>
+    <button class="nav-btn" data-tab="metrics"><span>📈</span>数字</button>
+    <button class="nav-btn" data-tab="method"><span>🔥</span>メソッド</button>
+  </nav>
+
+  <script src="app.js"></script>
+</body>
+</html>

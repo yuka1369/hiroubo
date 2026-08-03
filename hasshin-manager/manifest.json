@@ -1,0 +1,14 @@
+{
+  "name": "発信マネージャー",
+  "short_name": "発信管理",
+  "description": "YouTube / X / note / Instagram の発信を林インターンメソッドで伸ばす",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0b1020",
+  "theme_color": "#0b1020",
+  "lang": "ja",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
