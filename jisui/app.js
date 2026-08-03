@@ -42,6 +42,8 @@
   const recipeById   = (id) => allRecipes().find((r) => r.id === id);
   const creatorById  = (id) => allCreators().find((c) => c.id === id);
   const recipeCost   = (r) => r ? r.ings.reduce((s, i) => s + (i.price || 0), 0) : 0;
+  const UNDER400     = 400;
+  const isUnder400   = (r) => recipeCost(r) <= UNDER400;
 
   // ============ タブ切り替え ============
   document.querySelectorAll('.tab-btn').forEach((btn) => {
@@ -98,6 +100,9 @@
     const useCreatorsOnly = $('use-creators-only').checked;
 
     let pool = allRecipes();
+    if ($('under400-only').checked) {
+      pool = pool.filter(isUnder400); // 1食400円以下でしばる（デフォルト）
+    }
     if (useCreatorsOnly) {
       const ids = new Set(allCreators().map((c) => c.id));
       const filtered = pool.filter((r) => r.creatorId && ids.has(r.creatorId));
@@ -119,14 +124,15 @@
 
     // 予算で決定：オーバーしていたら高い食事を節約系に差し替え
     const budget = parseInt($('budget').value, 10);
-    let note = '';
+    const notes = [];
+    if ($('under400-only').checked) notes.push('朝昼晩ぜんぶ1食400円以下でくみました');
     if (budget && budget > 0) {
       const trimmed = fitToBudget(budget, pool);
-      note = trimmed
+      notes.push(trimmed
         ? `予算 ${yen(budget)} 以内におさめました（合計 ${yen(planTotal())}）`
-        : `できるだけ節約系に寄せましたが、合計 ${yen(planTotal())} と予算 ${yen(budget)} を少し超えました`;
+        : `できるだけ節約系に寄せましたが、合計 ${yen(planTotal())} と予算 ${yen(budget)} を少し超えました`);
     }
-    $('plan-budget-note').textContent = note;
+    $('plan-budget-note').textContent = notes.join(' / ');
 
     savePlan();
     checks = {}; saveChecks();
@@ -204,7 +210,7 @@
                 <span class="tag">⏱${rc.time}分</span>
                 ${rc.nutri ? '<span class="tag nutri">🥗栄養◎</span>' : ''}
                 ${rc.freeze ? '<span class="tag freeze">🧊作り置き</span>' : ''}
-                <span class="tag cost">${yen(recipeCost(rc))}</span>
+                <span class="tag cost${recipeCost(rc) > UNDER400 ? ' over' : ''}">${yen(recipeCost(rc))}</span>
               </div>
             </div>
             <button class="swap-btn" title="差し替え">🔄</button>`;
@@ -347,7 +353,8 @@
     const grid = $('recipe-list');
     grid.innerHTML = '';
     let list = allRecipes();
-    if (recipeFilter !== 'all') list = list.filter((r) => r.cat === recipeFilter);
+    if (recipeFilter === 'under400') list = list.filter(isUnder400); // 横断カテゴリ：値段で判定
+    else if (recipeFilter !== 'all') list = list.filter((r) => r.cat === recipeFilter);
     list.forEach((r) => {
       const cat = catById(r.cat);
       const creator = r.creatorId ? creatorById(r.creatorId) : null;

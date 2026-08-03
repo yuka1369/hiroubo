@@ -151,6 +151,7 @@ details summary { cursor: pointer; font-weight: 600; padding: 4px 0; }
 .tag.nutri { color: var(--accent); border-color: var(--accent-d); }
 .tag.freeze { color: #7fc7ff; border-color: #2a5878; }
 .tag.cost { color: var(--warn); border-color: #6b5a2a; }
+.tag.cost.over { color: var(--danger); border-color: #7a3232; }
 .swap-btn { background: transparent; font-size: 1.1rem; padding: 6px; flex-shrink: 0; }
 
 /* 決定バー */

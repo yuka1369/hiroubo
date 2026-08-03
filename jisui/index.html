@@ -20,6 +20,7 @@
       <h2>今週の献立を推薦</h2>
       <p class="hint">
         平日は<b>簡単＆栄養</b>で朝・昼・夜、土日は<b>30分でできる冷凍ストック・作り置き</b>を提案します。
+        初期設定では<b>朝昼晩すべて1食400円以下</b>でくみます。
       </p>
 
       <label class="field">
@@ -33,6 +34,11 @@
           <input type="number" id="budget" placeholder="例）5000" min="0" step="500" inputmode="numeric" />
           <span class="unit">円</span>
         </div>
+      </label>
+
+      <label class="field checkbox">
+        <input type="checkbox" id="under400-only" checked />
+        <span>🪙 朝昼晩ぜんぶ1食400円以下でしばる（デフォルト）</span>
       </label>
 
       <label class="field checkbox">

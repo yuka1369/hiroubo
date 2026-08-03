@@ -10,6 +10,7 @@ const CATEGORIES = [
   { id: 'manga',   name: '漫画料理',            emoji: '📖', desc: 'あの作品のあのメシを再現' },
   { id: 'joy',     name: '食の楽しみ料理',       emoji: '🎉', desc: '手間をかけて楽しむごちそう' },
   { id: 'thrifty', name: '節約料理',            emoji: '💰', desc: '財布にやさしい。給料日前に' },
+  { id: 'under400', name: '朝昼晩400円以下',      emoji: '🪙', desc: '1食ワンコイン以下。毎日のごはんのデフォに' },
 ];
 
 const SEED_CREATORS = [
@@ -107,4 +108,30 @@ const SEED_RECIPES = [
     ings: [['ごはん',2,'膳',80],['卵',2,'個',50],['ねぎ',0.5,'本',30],['醤油',10,'g',6]] }),
   r({ id: 's-t6', name: 'ちくわの磯辺揚げ', cat: 'thrifty', time: 12, kcal: 300, meals: ['dinner'],
     ings: [['ちくわ',4,'本',100],['天ぷら粉',40,'g',30],['青のり',2,'g',15]] }),
+
+  // ---- 朝昼晩400円以下（1食ワンコイン以下・週のデフォルト向け）----
+  r({ id: 's-u1', name: '卵かけごはんと味噌汁', cat: 'under400', creatorId: 'c-seed-1', time: 5, kcal: 400, servings: 1, meals: ['breakfast','lunch'],
+    ings: [['ごはん',1,'膳',40],['卵',1,'個',25],['醤油',6,'g',6],['インスタント味噌汁',1,'食',35]] }),
+  r({ id: 's-u2', name: '納豆チーズトースト', cat: 'under400', time: 5, kcal: 350, servings: 1, meals: ['breakfast'],
+    ings: [['食パン',1,'枚',30],['納豆',1,'パック',30],['チーズ',1,'枚',40]] }),
+  r({ id: 's-u3', name: 'オートミール雑炊', cat: 'under400', time: 8, kcal: 300, nutri: true, servings: 1, meals: ['breakfast','lunch'],
+    ings: [['オートミール',30,'g',40],['卵',1,'個',25],['鶏がらスープの素',5,'g',10],['ねぎ',0.2,'本',12]] }),
+  r({ id: 's-u4', name: 'ハムエッグトースト', cat: 'under400', time: 7, kcal: 380, servings: 1, meals: ['breakfast'],
+    ings: [['食パン',1,'枚',30],['卵',1,'個',25],['ハム',2,'枚',40],['バター',10,'g',20]] }),
+  r({ id: 's-u5', name: '鶏むねの照り焼き作り置き', cat: 'under400', creatorId: 'c-seed-2', time: 20, kcal: 320, freeze: true, nutri: true, servings: 3, meals: ['breakfast','lunch','dinner'],
+    ings: [['鶏むね肉',300,'g',240],['醤油',20,'g',10],['みりん',20,'g',12],['砂糖',10,'g',4]] }),
+  r({ id: 's-u6', name: '豚こま生姜焼き作り置き', cat: 'under400', time: 20, kcal: 360, freeze: true, servings: 3, meals: ['lunch','dinner'],
+    ings: [['豚こま',200,'g',200],['玉ねぎ',0.5,'個',25],['生姜',10,'g',20],['醤油',20,'g',10]] }),
+  r({ id: 's-u7', name: '小松菜と油揚げの煮浸し', cat: 'under400', creatorId: 'c-seed-2', time: 15, kcal: 120, freeze: true, nutri: true, servings: 3, meals: ['breakfast','dinner'],
+    ings: [['小松菜',1,'束',100],['油揚げ',1,'枚',30],['めんつゆ',30,'g',20]] }),
+  r({ id: 's-u8', name: '切り干し大根の煮物', cat: 'under400', time: 20, kcal: 130, freeze: true, nutri: true, servings: 4, meals: ['breakfast','lunch','dinner'],
+    ings: [['切り干し大根',30,'g',80],['にんじん',0.5,'本',30],['油揚げ',1,'枚',30],['醤油',20,'g',10]] }),
+  r({ id: 's-u9', name: '親子丼', cat: 'under400', time: 15, kcal: 550, nutri: true, servings: 2, meals: ['lunch','dinner'],
+    ings: [['ごはん',2,'膳',80],['鶏もも肉',150,'g',165],['卵',2,'個',50],['玉ねぎ',0.5,'個',25]] }),
+  r({ id: 's-u10', name: '麻婆豆腐', cat: 'under400', time: 15, kcal: 420, servings: 2, meals: ['lunch','dinner'],
+    ings: [['豆腐',1,'丁',80],['豚ひき肉',100,'g',100],['麻婆豆腐の素',0.5,'袋',60],['ねぎ',0.5,'本',30]] }),
+  r({ id: 's-u11', name: 'ソース焼きそば', cat: 'under400', creatorId: 'c-seed-1', time: 12, kcal: 480, servings: 1, meals: ['lunch','dinner'],
+    ings: [['焼きそば麺',1,'袋',40],['キャベツ',0.2,'玉',40],['豚こま',80,'g',80],['ソース',20,'g',15]] }),
+  r({ id: 's-u12', name: '豚こまと野菜炒め', cat: 'under400', time: 12, kcal: 360, nutri: true, servings: 2, meals: ['lunch','dinner'],
+    ings: [['豚こま',100,'g',100],['もやし',1,'袋',30],['ピーマン',2,'個',60],['醤油',15,'g',8]] }),
 ];
