@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b1020" />
+  <title>まにあう - 到着から逆算するじたくリスト</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="prep.css" />
+</head>
+<body>
+  <main class="screen">
+    <header class="app-header">
+      <h1>⏳ まにあう</h1>
+      <p class="tagline">到着から逆算して「やること」の時刻を自動で出す</p>
+      <nav class="topnav">
+        <a href="index.html">📞 CallMe（着信アラーム）へ</a>
+      </nav>
+    </header>
+
+    <section class="add-card">
+      <h2>予定から逆算する</h2>
+      <form id="plan-form">
+        <label><span>ジャンル</span></label>
+        <div class="cats" id="cats">
+          <button type="button" class="cat" data-cat="date">💕 デート</button>
+          <button type="button" class="cat" data-cat="friends">🧋 友達との約束</button>
+          <button type="button" class="cat" data-cat="work">🏢 会社</button>
+          <button type="button" class="cat" data-cat="job">🎓 就活</button>
+        </div>
+
+        <label>
+          <span>予定名</span>
+          <input type="text" id="name" placeholder="例）〇〇とデート、A社 面接" maxlength="40" />
+        </label>
+
+        <div class="row">
+          <label>
+            <span>日付</span>
+            <input type="date" id="date" required />
+          </label>
+          <label>
+            <span>集合・開始の時刻</span>
+            <input type="time" id="meeting" required />
+          </label>
+        </div>
+
+        <div class="row">
+          <label>
+            <span>移動時間（分）</span>
+            <input type="number" id="travel" min="0" max="600" step="5" value="40" />
+          </label>
+          <label>
+            <span>何分前に着く？</span>
+            <input type="number" id="early" min="0" max="120" step="5" value="20" />
+          </label>
+        </div>
+
+        <label>
+          <span>前日準備をはじめる時刻（夕食後）</span>
+          <input type="time" id="night" value="20:30" />
+        </label>
+
+        <fieldset class="mode">
+          <legend>ボリューム</legend>
+          <label class="seg"><input type="radio" name="mode" value="full" checked /><span>フルコース</span></label>
+          <label class="seg"><input type="radio" name="mode" value="minimal" /><span>最低限だけ</span></label>
+        </fieldset>
+
+        <button type="submit" class="primary">🧮 逆算してリストを作る</button>
+      </form>
+    </section>
+
+    <section id="plans"></section>
+  </main>
+
+  <script src="prep.js"></script>
+</body>
+</html>

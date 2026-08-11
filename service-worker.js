@@ -1,10 +1,13 @@
 /* オフラインでも起動できるように、必要なファイルをキャッシュする */
-const CACHE = 'callme-v1';
+const CACHE = 'callme-v2';
 const ASSETS = [
   './',
   './index.html',
   './styles.css',
   './app.js',
+  './prep.html',
+  './prep.css',
+  './prep.js',
   './manifest.json',
   './icon.svg',
 ];

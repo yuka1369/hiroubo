@@ -36,6 +36,8 @@ html, body {
 .app-header { text-align: center; margin: 18px 0 26px; }
 .app-header h1 { font-size: 2rem; margin: 0; letter-spacing: .5px; }
 .tagline { color: var(--muted); margin: 6px 0 0; font-size: .95rem; }
+.topnav { margin-top: 12px; }
+.topnav a { color: var(--primary-2); text-decoration: none; font-size: .9rem; }
 
 section { margin-bottom: 22px; }
 
