@@ -44,6 +44,7 @@ from tsuihai_marketer.ingest import (  # noqa: E402
 from tsuihai_marketer.llm import LLMClient, LLMConfig  # noqa: E402
 from tsuihai_marketer.report import build_report  # noqa: E402
 from tsuihai_marketer.similarity import match_own_posts  # noqa: E402
+from tsuihai_marketer.targeting import build_targets  # noqa: E402
 from tsuihai_marketer.timeline_predict import predict_timelines  # noqa: E402
 from tsuihai_marketer.value_extraction import extract_values  # noqa: E402
 from tsuihai_marketer.xclient import XClient  # noqa: E402
@@ -54,6 +55,7 @@ RESEARCH_F = "research.generated.json"
 POSTS_F = "audience_posts.jsonl"
 TIMELINE_F = "timeline_prediction.json"
 MATCHES_F = "matches.json"
+TARGETS_F = "targets.json"
 ACTIONS_F = "actions.json"
 REPORT_F = "analysis.md"
 
@@ -192,6 +194,29 @@ def cmd_match(cfg: Config, args) -> int:
     return 0
 
 
+def cmd_target(cfg: Config, args) -> int:
+    """ユーザー1人単位で、自分のツイ廃履歴から刺さるツイートをTOP出し。"""
+    llm = _client(cfg)
+    own = cfg.resolve(cfg.own_timeline_file)
+    own_posts = dedupe(load_posts_jsonl(own))
+    audience_posts = load_posts_jsonl(cfg.path(POSTS_F))
+    values = read_json(cfg.path(VALUES_F)) if cfg.path(VALUES_F).exists() else {}
+    sampled = read_json(cfg.path("sampled_users.json")) \
+        if cfg.path("sampled_users.json").exists() else None
+    _log(f"ユーザー別TOP出しを計算中... (自ツイート {len(own_posts)} 件 / "
+         f"オーディエンス {len(audience_posts)} 投稿)")
+    result = build_targets(cfg, own_posts, audience_posts, values, llm,
+                           top_k=args.top_k, sampled_users=sampled,
+                           generate=not args.no_generate)
+    write_json(cfg.path(TARGETS_F), result)
+    _log(f"→ {cfg.path(TARGETS_F)} ({len(result.get('targets', []))} ユーザー / method={result.get('method')})")
+    # 上位数件をコンソールにも
+    for t in result.get("targets", [])[:3]:
+        bt = (t.get("best_tweet") or {})
+        _log(f"  @{t['user']} (reach {t['reach_score']}): {bt.get('text','')[:50]}")
+    return 0
+
+
 def cmd_actions(cfg: Config, args) -> int:
     llm = _client(cfg)
     own = cfg.resolve(cfg.own_timeline_file)
@@ -212,7 +237,9 @@ def cmd_report(cfg: Config, args) -> int:
     timeline = read_json(cfg.path(TIMELINE_F))
     matches = read_json(cfg.path(MATCHES_F))
     actions = read_json(cfg.path(ACTIONS_F))
-    md = build_report(cfg.product.name, values, audience, timeline, matches, actions)
+    targets = read_json(cfg.path(TARGETS_F)) if cfg.path(TARGETS_F).exists() else None
+    md = build_report(cfg.product.name, values, audience, timeline, matches, actions,
+                      targets=targets)
     out = cfg.report_path(REPORT_F)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(md, encoding="utf-8")
@@ -247,7 +274,7 @@ def cmd_run(cfg: Config, args) -> int:
         _log("     4) config の nob_kit.path/data_dir を合わせて `python3 tmark.py run`")
         _log("\n（動作確認だけしたい場合は --allow-sample を付けて実行してください）")
         return 0
-    for fn in (cmd_timeline, cmd_match, cmd_actions, cmd_report):
+    for fn in (cmd_timeline, cmd_match, cmd_target, cmd_actions, cmd_report):
         rc = fn(cfg, args)
         if rc:
             return rc
@@ -263,8 +290,8 @@ def main(argv=None) -> int:
     cmds = {
         "doctor": cmd_doctor, "values": cmd_values, "audience": cmd_audience,
         "collect": cmd_collect, "ingest": cmd_ingest, "timeline": cmd_timeline,
-        "match": cmd_match, "actions": cmd_actions, "report": cmd_report,
-        "run": cmd_run,
+        "match": cmd_match, "target": cmd_target, "actions": cmd_actions,
+        "report": cmd_report, "run": cmd_run,
     }
     for name in cmds:
         p = sub.add_parser(name)
@@ -274,6 +301,8 @@ def main(argv=None) -> int:
                        help="collect: 自アカウントのタイムライン収集をスキップ")
         p.add_argument("--no-collect", action="store_true",
                        help="run: X API 自動収集を使わず nob キット取り込みにする")
+        p.add_argument("--no-generate", action="store_true",
+                       help="target: LLMによるツイート生成/アクション生成をスキップ")
         p.add_argument("--allow-sample", action="store_true",
                        help="ingest: nob データが無い時 examples のサンプルを使う")
 

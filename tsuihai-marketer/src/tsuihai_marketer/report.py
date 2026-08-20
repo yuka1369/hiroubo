@@ -11,7 +11,7 @@ def _h(level: int, text: str) -> str:
 
 def build_report(cfg_name: str, values: Dict[str, Any], audience: Dict[str, Any],
                  timeline: Dict[str, Any], matches: Dict[str, Any],
-                 actions: Dict[str, Any]) -> str:
+                 actions: Dict[str, Any], targets: Dict[str, Any] = None) -> str:
     L: List[str] = []
     product = values.get("product", {})
     L.append(_h(1, f"ツイ廃マーケター分析レポート — {product.get('name', cfg_name)}"))
@@ -80,6 +80,31 @@ def build_report(cfg_name: str, values: Dict[str, Any], audience: Dict[str, Any]
         if not s.get("matches"):
             L.append("- （刺さる自ツイートなし → この層向けの発信が不足）")
         L.append("")
+
+    # 4.5 ユーザー別 TOP出し（ネットワーク・ターゲティング）
+    if targets and targets.get("targets"):
+        L.append(_h(2, "★ ユーザー別 TOP出し (Per-user targeting / network)"))
+        L.append("Xはネットワークで表示が決まる前提で、各ターゲットユーザーのTLに最も溶け込む"
+                 "自分のツイ廃ツイートを類似度でTOP出し。reach_score が高い順＝狙うべき順。\n")
+        for t in targets["targets"][:15]:
+            seg = f" / {t.get('segment_name')}" if t.get("segment_name") else ""
+            L.append(_h(3, f"@{t.get('user')}（reach {t.get('reach_score')}{seg}）"))
+            L.append(f"- TLトピック: {', '.join(t.get('timeline_topics', [])[:8])}")
+            net = ", ".join(f"@{n['handle']}({n['weight']})" for n in t.get("network", [])[:6])
+            if net:
+                L.append(f"- ネットワーク隣人: {net}")
+            bt = t.get("best_tweet") or {}
+            if bt:
+                L.append(f"- ★TOP自ツイート (sim {bt.get('similarity')}): {bt.get('text','')}")
+            for m in t.get("top_own_tweets", [])[1:4]:
+                L.append(f"    - sim {m['similarity']}: {m['text'][:70]}")
+            if t.get("generated_tweet"):
+                L.append(f"- 生成ツイート案: {t['generated_tweet']}")
+            if t.get("network_action"):
+                L.append(f"- ネットワーク行動: {t['network_action']}")
+            if t.get("reason"):
+                L.append(f"  - なぜ届くか: {t['reason']}")
+            L.append("")
 
     # 5. アクション
     L.append(_h(2, "5. 表示率アップのアクション (Actions to increase reach)"))

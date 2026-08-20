@@ -37,6 +37,7 @@ class Post:
     has_media: bool = False
     has_link: bool = False
     is_reply: bool = False
+    mentions: List[str] = field(default_factory=list)  # 絡んでいる相手＝ネットワーク隣人
     raw: Dict[str, Any] = field(default_factory=dict)
 
     @property
@@ -67,6 +68,7 @@ class Post:
             "has_media": self.has_media,
             "has_link": self.has_link,
             "is_reply": self.is_reply,
+            "mentions": self.mentions,
         }
 
 
@@ -94,6 +96,32 @@ def _detect_link(rec: dict, text: str) -> bool:
         return True
     entities = rec.get("entities") or {}
     return bool(entities.get("urls"))
+
+
+import re as _re
+
+_MENTION_RE = _re.compile(r"@(\w{1,15})")
+
+
+def _extract_mentions(rec: dict, text: str, author: str) -> List[str]:
+    """絡んでいる相手(=ネットワーク隣人)を抽出。entities.mentions 優先、無ければ本文から。"""
+    out: List[str] = []
+    entities = rec.get("entities") or {}
+    for m in entities.get("mentions") or []:
+        u = (m.get("username") or "").lstrip("@")
+        if u:
+            out.append(u)
+    if not out:
+        out = [m.lstrip("@") for m in _MENTION_RE.findall(text or "")]
+    a = (author or "").lower()
+    seen, uniq = set(), []
+    for u in out:
+        ul = u.lower()
+        if ul == a or ul in seen:
+            continue
+        seen.add(ul)
+        uniq.append(u)
+    return uniq
 
 
 def normalize_record(rec: dict) -> Optional[Post]:
@@ -132,6 +160,8 @@ def normalize_record(rec: dict) -> Optional[Post]:
         or text.startswith("@")
     )
 
+    mentions = _extract_mentions(rec, text, author)
+
     return Post(
         id=pid,
         text=text,
@@ -148,6 +178,7 @@ def normalize_record(rec: dict) -> Optional[Post]:
         has_media=_detect_media(rec, text),
         has_link=_detect_link(rec, text),
         is_reply=bool(is_reply),
+        mentions=mentions,
         raw=rec,
     )
 

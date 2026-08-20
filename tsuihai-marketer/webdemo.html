@@ -1,0 +1,365 @@
+<title>ツイ廃マーケター</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@500;700;900&family=Murecho:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap">
+<style>
+:root{
+  --bg:#F5F7F9; --surface:#FFFFFF; --surface-2:#EDF1F5; --ink:#151A21; --muted:#5F6A79;
+  --line:#DEE4EC; --accent:#0A9BA8; --accent-strong:#06727C; --accent-soft:rgba(10,155,168,.12);
+  --network:#D9733F; --network-soft:rgba(217,115,63,.14); --good:#2E9E67;
+  --shadow:0 1px 2px rgba(20,30,45,.04),0 8px 28px rgba(20,30,45,.06);
+  --r:14px;
+}
+:root:not([data-theme="light"]){}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0C0F13; --surface:#151A21; --surface-2:#1D242D; --ink:#E7EDF4; --muted:#93A0B1;
+    --line:#28303B; --accent:#26BECB; --accent-strong:#63D6DF; --accent-soft:rgba(38,190,203,.16);
+    --network:#EE9366; --network-soft:rgba(238,147,102,.18); --good:#4EBE85;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0C0F13; --surface:#151A21; --surface-2:#1D242D; --ink:#E7EDF4; --muted:#93A0B1;
+  --line:#28303B; --accent:#26BECB; --accent-strong:#63D6DF; --accent-soft:rgba(38,190,203,.16);
+  --network:#EE9366; --network-soft:rgba(238,147,102,.18); --good:#4EBE85;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:"Murecho",system-ui,sans-serif; font-weight:400; line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1200px; margin:0 auto; padding:28px 20px 64px}
+h1,h2,h3{font-family:"Zen Kaku Gothic New",system-ui,sans-serif; text-wrap:balance; margin:0}
+.mono{font-family:"Space Mono",ui-monospace,monospace; font-variant-numeric:tabular-nums}
+
+/* ---- header ---- */
+header{margin-bottom:24px}
+.eyebrow{font-family:"Space Mono",monospace; font-size:12px; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--accent-strong); margin-bottom:10px}
+h1{font-size:clamp(28px,4.5vw,44px); font-weight:900; letter-spacing:-.01em; line-height:1.08}
+.lede{color:var(--muted); max-width:60ch; margin-top:12px; font-size:15.5px}
+.product-bar{
+  display:flex; flex-wrap:wrap; align-items:center; gap:12px; margin-top:20px;
+  background:var(--surface); border:1px solid var(--line); border-radius:var(--r);
+  padding:14px 16px; box-shadow:var(--shadow);
+}
+.product-bar label{font-size:12px; color:var(--muted); font-family:"Space Mono",monospace;
+  letter-spacing:.08em; text-transform:uppercase}
+.product-bar .name{font-family:"Zen Kaku Gothic New",sans-serif; font-weight:700; font-size:17px}
+.product-bar .desc{color:var(--muted); font-size:13.5px; flex:1; min-width:200px}
+.pill{display:inline-flex; align-items:center; gap:6px; font-size:12px; padding:3px 10px;
+  border-radius:999px; background:var(--accent-soft); color:var(--accent-strong);
+  font-family:"Space Mono",monospace}
+
+/* ---- layout ---- */
+.grid{display:grid; grid-template-columns:340px 1fr; gap:20px; margin-top:22px}
+@media (max-width:860px){.grid{grid-template-columns:1fr}}
+.panel{background:var(--surface); border:1px solid var(--line); border-radius:var(--r);
+  box-shadow:var(--shadow)}
+.panel-head{padding:16px 18px 12px; border-bottom:1px solid var(--line)}
+.panel-head h2{font-size:15px; font-weight:700; letter-spacing:.01em}
+.panel-head .sub{font-size:12px; color:var(--muted); margin-top:3px}
+
+/* ---- user list ---- */
+.userlist{padding:8px; display:flex; flex-direction:column; gap:6px; max-height:640px; overflow-y:auto}
+.ucard{border:1px solid transparent; border-radius:11px; padding:11px 12px; cursor:pointer;
+  background:transparent; text-align:left; width:100%; font:inherit; color:inherit;
+  transition:background .15s, border-color .15s}
+.ucard:hover{background:var(--surface-2)}
+.ucard.active{background:var(--accent-soft); border-color:var(--accent)}
+.ucard:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+.ucard .row1{display:flex; align-items:baseline; justify-content:space-between; gap:8px}
+.ucard .handle{font-family:"Space Mono",monospace; font-weight:700; font-size:14px}
+.ucard .reachnum{font-family:"Space Mono",monospace; font-size:13px; color:var(--accent-strong)}
+.ucard .seg{font-size:11.5px; color:var(--muted); margin-top:1px}
+.meter{height:6px; border-radius:999px; background:var(--surface-2); margin-top:8px; overflow:hidden}
+:root[data-theme="dark"] .meter, :root:not([data-theme="light"]) .meter{background:#0a0d11}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .meter{background:#0a0d11}}
+.meter > i{display:block; height:100%; border-radius:999px;
+  background:linear-gradient(90deg,var(--accent),var(--accent-strong)); transition:width .5s cubic-bezier(.2,.7,.2,1)}
+
+/* ---- detail ---- */
+.detail{padding:18px 20px}
+.detail .who{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap}
+.detail .who .h{font-family:"Space Mono",monospace; font-weight:700; font-size:20px}
+.detail .who .segtag{font-size:12px; padding:2px 9px; border-radius:999px;
+  background:var(--surface-2); color:var(--muted)}
+.section-label{font-family:"Space Mono",monospace; font-size:11.5px; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--muted); margin:20px 0 9px}
+.chips{display:flex; flex-wrap:wrap; gap:7px}
+.chip{font-size:12.5px; padding:4px 10px; border-radius:8px; background:var(--surface-2);
+  border:1px solid var(--line)}
+.chip.net{background:var(--network-soft); border-color:transparent; color:var(--network);
+  font-family:"Space Mono",monospace; font-weight:700}
+.chip.net b{opacity:.6; font-weight:400; margin-left:4px}
+
+.thesis{margin-top:18px; padding:13px 15px; border-radius:11px; background:var(--accent-soft);
+  border:1px solid var(--accent); font-size:13.5px}
+.thesis b{color:var(--accent-strong)}
+
+/* ---- ranked own tweets ---- */
+.rankhead{display:flex; align-items:baseline; justify-content:space-between; margin:22px 0 4px; gap:10px}
+.rankhead h3{font-size:16px; font-weight:700}
+.rankhead .hint{font-size:12px; color:var(--muted)}
+.tweet{border:1px solid var(--line); border-radius:12px; padding:13px 14px; margin-top:10px;
+  background:var(--surface); position:relative; transition:border-color .2s}
+.tweet.top{border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft)}
+.tweet .t-top{display:flex; align-items:center; gap:8px; margin-bottom:7px}
+.rankn{font-family:"Space Mono",monospace; font-size:12px; color:var(--muted); min-width:22px}
+.badge{font-size:11px; font-family:"Space Mono",monospace; font-weight:700; letter-spacing:.06em;
+  padding:2px 8px; border-radius:6px; background:var(--accent); color:#fff}
+:root[data-theme="dark"] .badge,:root:not([data-theme="light"]) .badge{color:#04252a}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .badge{color:#04252a}}
+.simval{margin-left:auto; font-family:"Space Mono",monospace; font-size:13px; font-weight:700;
+  color:var(--accent-strong)}
+.eng{font-size:11px; color:var(--muted); font-family:"Space Mono",monospace}
+.tweet .body{font-size:14.5px; line-height:1.55}
+.simbar{height:5px; border-radius:999px; background:var(--surface-2); margin-top:10px; overflow:hidden}
+.simbar > i{display:block; height:100%; border-radius:999px; background:var(--accent);
+  transition:width .55s cubic-bezier(.2,.7,.2,1)}
+.overlap{margin-top:8px; font-size:11.5px; color:var(--muted)}
+.overlap span{font-family:"Space Mono",monospace; background:var(--surface-2); padding:1px 6px;
+  border-radius:5px; margin-right:5px; display:inline-block; margin-bottom:3px}
+
+/* ---- how it works ---- */
+.how{margin-top:26px; display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:14px}
+.how .step{background:var(--surface); border:1px solid var(--line); border-radius:12px;
+  padding:15px 16px; box-shadow:var(--shadow)}
+.how .n{font-family:"Space Mono",monospace; font-weight:700; color:var(--accent-strong); font-size:13px}
+.how h4{font-family:"Zen Kaku Gothic New",sans-serif; font-size:14.5px; margin:6px 0 5px; font-weight:700}
+.how p{font-size:12.5px; color:var(--muted); margin:0; line-height:1.55}
+footer{margin-top:34px; padding-top:18px; border-top:1px solid var(--line);
+  color:var(--muted); font-size:12.5px}
+footer a{color:var(--accent-strong)}
+.toggle{position:fixed; top:14px; right:14px; z-index:10; background:var(--surface);
+  border:1px solid var(--line); color:var(--muted); border-radius:999px; width:38px; height:38px;
+  cursor:pointer; font-size:16px; box-shadow:var(--shadow)}
+.toggle:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{transition:none !important}}
+</style>
+
+<button class="toggle" id="themeToggle" aria-label="テーマ切替">◐</button>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">ツイ廃マーケター / network targeting</div>
+    <h1>あなたのツイ廃履歴を、刺さる相手にTOP出しする</h1>
+    <p class="lede">Xはネットワークで表示が決まる。狙うユーザーのタイムラインに一番“溶け込む”自分の過去ツイートを、
+      類似度で並べて上位を出す。下はサンプルデータをブラウザ内でTF-IDF計算した実際のデモです。</p>
+    <div class="product-bar">
+      <div>
+        <label>PRODUCT</label>
+        <div class="name" id="pName">CallMe</div>
+      </div>
+      <div class="desc" id="pDesc">予定の少し前に「電話がかかってくる」アラームアプリ。通知を見流してしまう人向けに、無視しづらく時間を知らせる。</div>
+      <span class="pill" id="statPill">— users</span>
+    </div>
+  </header>
+
+  <div class="grid">
+    <aside class="panel">
+      <div class="panel-head">
+        <h2>ターゲット候補</h2>
+        <div class="sub">reach 降順 ＝ 狙うべき順（類似度 × ネットワーク到達性）</div>
+      </div>
+      <div class="userlist" id="userList" role="listbox" aria-label="ターゲット候補"></div>
+    </aside>
+
+    <main class="panel">
+      <div class="detail" id="detail"></div>
+    </main>
+  </div>
+
+  <section class="how" aria-label="仕組み">
+    <div class="step"><div class="n">01</div><h4>価値を欲する層を選ぶ</h4><p>プロダクトの価値に反応しそうなユーザーをサンプリング（本番はX APIで100件〜）。</p></div>
+    <div class="step"><div class="n">02</div><h4>TLとネットワークを読む</h4><p>そのユーザーの発話トピックと、絡んでいる相手（＝グラフの隣人）を抽出。</p></div>
+    <div class="step"><div class="n">03</div><h4>自分の履歴と照合</h4><p>ツイ廃アカウントの全投稿を、そのユーザーのTL語彙とのコサイン類似度でランク付け。</p></div>
+    <div class="step"><div class="n">04</div><h4>TOPを出す／生成する</h4><p>最も溶け込む1本をTOP出し。本番はここから新規ツイート生成やネットワーク行動も予測。</p></div>
+  </section>
+
+  <footer>
+    サンプルデータでの概念デモ（計算はすべてこのページ内で実行）。本番エンジンは Python 製で、収集は
+    <a href="https://github.com/nobphotographr/x-audience-research-kit" target="_blank" rel="noopener">nob さんの x-audience-research-kit</a>
+    ／X API を利用します。公開ツイートの分析用途で、規約と各国法令に配慮してご利用ください。
+  </footer>
+</div>
+
+<script>
+// ============ 埋め込みサンプルデータ ============
+const OWN = [
+ {t:"通知って見た瞬間に脳から消えるよね。だから『無視できない』設計だけが勝つと思ってる", e:230},
+ {t:"予定の5分前に『電話がかかってくる』って発想、自分みたいなADHDには刺さりすぎる。バナーじゃ無理なんよ", e:340},
+ {t:"過集中で気づいたら夜。時間が溶ける現象、名前つけてほしい", e:190},
+ {t:"アラーム10個かけて全部無意識に止める特技、履歴書に書けない", e:410},
+ {t:"タスク管理、視覚化してないタスクは存在してないのと一緒。目に見えないと脳が認識しない", e:260},
+ {t:"締切前日にだけ本気出す人間、逆算リマインドがないと詰む。前日の自分を信用するな", e:300},
+ {t:"『あと5分で出るよ』を機械が言ってくれるだけで人生変わる。人間の付き添いがいなくても動ける", e:275},
+ {t:"時間感覚がバグってる人向けの道具って本当に少ない。健常者向けの『ちゃんとした人用』ばっかり", e:320},
+ {t:"薬飲む時間も忘れるからリマインダー山盛り。でもそのリマインダーも見ない", e:140},
+ {t:"遅刻魔卒業したくて色々試したけど、結局『物理的に無視できない合図』が一番効いた", e:215},
+ {t:"習慣化アプリ3日でアイコン見なくなる問題、通知を『電話』にしたら解決するのでは？と最近思ってる", e:180},
+ {t:"在宅で時間の区切りが消えた人、始業と終業に『電話』鳴らすと脳が切り替わるよ", e:205},
+ {t:"朝起きられない体質、目覚ましの音に慣れてしまうのが問題。毎回違う『着信』なら起きられた", e:290},
+ {t:"やることリスト作る才能はあるのに実行が0。作って満足しがち", e:160},
+ {t:"猫が可愛い。以上", e:45},
+ {t:"今日のラーメン、二郎系。にんにく入れますか？→はい", e:12},
+ {t:"新宿駅でまた迷子。方向音痴とADHDの合わせ技はきつい", e:80},
+ {t:"ゲームの新作積んでる。時間が溶けて消える", e:18},
+ {t:"コーヒー3杯目。カフェイン効いてる気がしない", e:22},
+ {t:"子どもの送り迎え、毎回ギリギリで心臓に悪い。時間の逆算が本当に苦手", e:95},
+];
+
+const USERS = [
+ {h:"asa_nigate", seg:"朝起きれない・遅刻", ment:["nemui_life","adhd_kaigi"], tw:[
+   "また寝坊した。アラーム5個かけたのに全部止めた記憶がない",
+   "朝起きられなくて仕事に遅刻。目覚まし意味ない体質っている？",
+   "二度寝の天才。目覚ましの音にもう体が慣れてしまった",
+   "遅刻魔卒業したい。もう社会人なのに毎朝ギリギリ"]},
+ {h:"kashuchu_zaitaku", seg:"過集中・在宅", ment:["zaitaku_gumi","toki_tomo"], tw:[
+   "在宅ワークで時間の区切りがなくて昼夜逆転してきた",
+   "集中してると時間が溶ける。気づいたら3時間経ってる過集中こわい",
+   "始業と終業の合図がないと脳が切り替わらない",
+   "気づいたら夜。今日も時間が消えた"]},
+ {h:"task_migoroshi", seg:"タスク管理", ment:["adhd_kaigi","task_ol"], tw:[
+   "タスク管理アプリ何個も入れては消してる。結局続かない",
+   "やることリスト作るのは得意。実行が壊滅的",
+   "視覚化しないとタスクが存在しないのと同じになる",
+   "リマインダー設定するの自体を忘れる。詰んでる"]},
+ {h:"kusuri_wasure", seg:"薬・習慣リマインド", ment:["adhd_kaigi"], tw:[
+   "薬飲む時間も忘れる。毎日同じ時間って難しい",
+   "習慣化アプリ、3日でアイコン見なくなる。通知も消してしまう",
+   "リマインダー山盛りにしてるのに、その通知を見ない"]},
+ {h:"shimekiri_zenjitsu", seg:"締切前日型", ment:["toki_tomo"], tw:[
+   "締切前日にしか動けない人間なので、逆算リマインドが欲しい",
+   "前日の自分を信用してはいけないと毎回学ぶ",
+   "予定を詰め込みすぎて全部中途半端。優先順位がわからない"]},
+ {h:"tsuuchi_mienai", seg:"通知スルー", ment:["nemui_life"], tw:[
+   "通知バナー、10秒で消えるから見逃す。しつこいくらいでちょうどいい",
+   "電話だと無視できないんだよな。バナー通知は本当に見えない",
+   "通知を無視する天才なので、無視できない仕組みだけが勝つ"]},
+ {h:"kosodate_giri", seg:"子育て・送り迎え", ment:[], tw:[
+   "子どもの送り迎えの時間、毎回ギリギリで心臓に悪い",
+   "朝の準備に何分かかるか毎回読めない。逆算できない"]},
+ {h:"neko_ramen_taro", seg:"（オフトピック多め）", ment:["ramen_bot"], tw:[
+   "今日のラーメンは家系。ライス無料は正義",
+   "猫と昼寝した。しあわせ",
+   "積みゲーが増えていく。時間はどこへ"]},
+];
+
+// ============ 日本語対応トークナイザ + TF-IDF（Python実装を移植） ============
+const STOP = new Set(["こと","これ","それ","する","した","して","います","ます","です","でも","ない","なる","ある","いる","the","and","rt"]);
+const reURL=/https?:\/\/\S+/g, reMen=/@\w+/g, reAl=/[a-zA-Z0-9_]+/g;
+const reCJK=/[぀-ヿ㐀-鿿一-龯々ー]+/g;
+function tokenize(text){
+  let s=(text||"").normalize("NFKC").toLowerCase().replace(reURL," ").replace(reMen," ");
+  const toks=[];
+  (s.match(reAl)||[]).forEach(w=>{ if(w.length>=2&&!STOP.has(w)) toks.push(w); });
+  (s.match(reCJK)||[]).forEach(ch=>{ for(let i=0;i<ch.length-1;i++){const b=ch.slice(i,i+2); if(!STOP.has(b)) toks.push(b);} });
+  return toks;
+}
+function buildIndex(docs){
+  const dt=docs.map(tokenize), n=dt.length, df={};
+  dt.forEach(ts=>{ new Set(ts).forEach(t=>df[t]=(df[t]||0)+1); });
+  const idf={}; for(const t in df) idf[t]=Math.log((1+n)/(1+df[t]))+1;
+  const vec=ts=>{ if(!ts.length) return {}; const tf={}; ts.forEach(t=>tf[t]=(tf[t]||0)+1);
+    const v={}; let nn=0; for(const t in tf){ const w=(tf[t]/ts.length)*(idf[t]||Math.log(1+n)+1); v[t]=w; nn+=w*w; }
+    nn=Math.sqrt(nn)||1; for(const t in v) v[t]/=nn; return v; };
+  return {docVecs:dt.map(vec), vecText:txt=>vec(tokenize(txt)), idf};
+}
+function cosine(a,b){ let s=0; const [x,y]=Object.keys(a).length>Object.keys(b).length?[b,a]:[a,b];
+  for(const t in x){ if(y[t]) s+=x[t]*y[t]; } return s; }
+
+const OWN_IDX = buildIndex(OWN.map(o=>o.t));
+
+// 各ユーザーを計算
+function analyzeUser(u){
+  const profile=u.tw.join(" ");
+  const pv=OWN_IDX.vecText(profile);
+  const profTokens=new Set(tokenize(profile));
+  const ranked=OWN.map((o,i)=>{
+    const sim=cosine(OWN_IDX.docVecs[i], pv);
+    const overlap=[...new Set(tokenize(o.t))].filter(t=>profTokens.has(t)).slice(0,7);
+    return {text:o.t, eng:o.e, sim, overlap};
+  }).filter(r=>r.sim>0).sort((a,b)=>b.sim-a.sim);
+  const best=ranked[0]? ranked[0].sim:0;
+  const netW=u.ment.length;               // 隣人数を到達性の代理に
+  const netReach=Math.min(1, netW/4);
+  const reach=best*(0.6+0.4*netReach);
+  // トピック（頻出CJK bigram/語）
+  const cnt={}; u.tw.forEach(t=>{ new Set(tokenize(t)).forEach(k=>cnt[k]=(cnt[k]||0)+1); });
+  const topics=Object.entries(cnt).sort((a,b)=>b[1]-a[1]).slice(0,8).map(x=>x[0]);
+  return {...u, ranked, reach, topics};
+}
+const ANALYZED = USERS.map(analyzeUser).sort((a,b)=>b.reach-a.reach);
+const maxReach = Math.max(...ANALYZED.map(u=>u.reach))||1;
+
+// ============ レンダリング ============
+const esc=s=>s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+document.getElementById("statPill").textContent = ANALYZED.length+" users · "+OWN.length+" tweets";
+
+const listEl=document.getElementById("userList");
+ANALYZED.forEach((u,i)=>{
+  const best=u.ranked[0];
+  const b=document.createElement("button");
+  b.className="ucard"+(i===0?" active":""); b.setAttribute("role","option");
+  b.setAttribute("aria-selected", i===0?"true":"false"); b.dataset.i=i;
+  b.innerHTML=`<div class="row1"><span class="handle">@${esc(u.h)}</span>
+     <span class="reachnum">${u.reach.toFixed(3)}</span></div>
+     <div class="seg">${esc(u.seg)}</div>
+     <div class="meter"><i style="width:${(u.reach/maxReach*100).toFixed(0)}%"></i></div>`;
+  b.addEventListener("click",()=>select(i));
+  listEl.appendChild(b);
+});
+
+function select(i){
+  document.querySelectorAll(".ucard").forEach((c,j)=>{
+    const on=j===i; c.classList.toggle("active",on); c.setAttribute("aria-selected",on?"true":"false");
+  });
+  const u=ANALYZED[i];
+  const maxSim=u.ranked[0]?u.ranked[0].sim:1;
+  const netChips = u.ment.length
+    ? u.ment.map(m=>`<span class="chip net">@${esc(m)}</span>`).join("")
+    : `<span class="chip">（このサンプルでは絡み先データなし）</span>`;
+  const topicChips = u.topics.map(t=>`<span class="chip">${esc(t)}</span>`).join("");
+  const tweets = u.ranked.slice(0,8).map((r,k)=>{
+    const w=(r.sim/maxSim*100).toFixed(0);
+    const ov=r.overlap.length?`<div class="overlap">重なり: ${r.overlap.map(o=>`<span>${esc(o)}</span>`).join("")}</div>`:"";
+    return `<div class="tweet${k===0?" top":""}">
+      <div class="t-top"><span class="rankn">#${k+1}</span>
+        ${k===0?'<span class="badge">TOP出し</span>':''}
+        <span class="eng">♥ ${r.eng}</span>
+        <span class="simval">sim ${r.sim.toFixed(3)}</span></div>
+      <div class="body">${esc(r.text)}</div>
+      <div class="simbar"><i style="width:${w}%"></i></div>${ov}</div>`;
+  }).join("");
+
+  document.getElementById("detail").innerHTML=`
+    <div class="who"><span class="h">@${esc(u.h)}</span><span class="segtag">${esc(u.seg)}</span></div>
+    <div class="section-label">このユーザーのTL話題</div>
+    <div class="chips">${topicChips}</div>
+    <div class="section-label">ネットワーク隣人（絡んでいる相手＝グラフの入口）</div>
+    <div class="chips">${netChips}</div>
+    <div class="thesis">このユーザーのTLに最も<b>溶け込む</b>自分のツイートほど、彼／彼女のネットワークに
+      入り込み<b>表示されやすい</b>という仮説で並べています。reach = 最大類似度 × ネットワーク到達性。</div>
+    <div class="rankhead"><h3>あなたのツイ廃履歴 × このユーザー</h3>
+      <span class="hint">コサイン類似度で降順・上位8本</span></div>
+    ${tweets}`;
+  // バーを一旦0にしてアニメ
+  requestAnimationFrame(()=>{ document.querySelectorAll("#detail .simbar > i").forEach(el=>{
+    const w=el.style.width; el.style.width="0%"; requestAnimationFrame(()=>el.style.width=w); }); });
+}
+select(0);
+
+// テーマトグル
+const root=document.documentElement, tg=document.getElementById("themeToggle");
+tg.addEventListener("click",()=>{
+  const cur=root.getAttribute("data-theme");
+  const sysDark=matchMedia("(prefers-color-scheme:dark)").matches;
+  const now=cur||(sysDark?"dark":"light");
+  root.setAttribute("data-theme", now==="dark"?"light":"dark");
+});
+</script>
