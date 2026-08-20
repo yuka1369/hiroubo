@@ -1,0 +1,15 @@
+# secrets
+.env
+*.key
+
+# generated data & reports (keep examples/ tracked)
+data/*.json
+data/*.jsonl
+reports/*.md
+!examples/**
+
+# python
+__pycache__/
+*.pyc
+.venv/
+venv/
