@@ -10,7 +10,8 @@
   python3 tmark.py doctor    --config config.json
   python3 tmark.py values    --config config.json
   python3 tmark.py audience  --config config.json     # research.generated.json も出力
-  python3 tmark.py ingest    --config config.json     # nob キット出力を取り込み
+  python3 tmark.py collect   --config config.json     # X API で自動収集（要 X_BEARER_TOKEN）
+  python3 tmark.py ingest    --config config.json     # nob キット出力を取り込み（自動収集の代替）
   python3 tmark.py timeline  --config config.json
   python3 tmark.py match     --config config.json
   python3 tmark.py actions   --config config.json
@@ -33,6 +34,7 @@ from tsuihai_marketer.actions import predict_actions  # noqa: E402
 from tsuihai_marketer.audience import (  # noqa: E402
     build_audience, generate_nob_research_config,
 )
+from tsuihai_marketer.collect import run_collection  # noqa: E402
 from tsuihai_marketer.config import (  # noqa: E402
     Config, load_config, read_json, write_json,
 )
@@ -44,6 +46,7 @@ from tsuihai_marketer.report import build_report  # noqa: E402
 from tsuihai_marketer.similarity import match_own_posts  # noqa: E402
 from tsuihai_marketer.timeline_predict import predict_timelines  # noqa: E402
 from tsuihai_marketer.value_extraction import extract_values  # noqa: E402
+from tsuihai_marketer.xclient import XClient  # noqa: E402
 
 VALUES_F = "value_elements.json"
 AUDIENCE_F = "audience.json"
@@ -87,7 +90,13 @@ def cmd_doctor(cfg: Config, args) -> int:
 
     own = cfg.resolve(cfg.own_timeline_file)
     print(f"  own timeline: {own}  exists: {own.exists()}")
-    print(f"  X_BEARER_TOKEN: {'set' if os.environ.get('X_BEARER_TOKEN') else 'NOT set'}")
+    has_token = bool(os.environ.get("X_BEARER_TOKEN"))
+    print(f"  X_BEARER_TOKEN: {'set' if has_token else 'NOT set'}")
+    if has_token:
+        print("    → 収集モード: X API 自動収集 (`collect` / `run`)")
+    else:
+        print("    → 収集モード: nob キット取り込み (`ingest`)。自動収集するなら X API を課金し "
+              "X_BEARER_TOKEN を設定してください")
     return 0
 
 
@@ -112,6 +121,29 @@ def cmd_audience(cfg: Config, args) -> int:
     write_json(cfg.path(RESEARCH_F), research)
     _log(f"→ {cfg.path(AUDIENCE_F)} ({len(audience.get('segments', []))} 層)")
     _log(f"→ {cfg.path(RESEARCH_F)} (nob キット用設定。x-audience-research-kit にコピーして実行)")
+    return 0
+
+
+def cmd_collect(cfg: Config, args) -> int:
+    """X API から直接ツイートを自動収集（オーディエンス＋自TL）。"""
+    x = XClient(verbose=True)
+    if not x.available:
+        _log("エラー: X_BEARER_TOKEN が未設定です。X API を課金して環境変数に設定してください。")
+        _log("      （nob キット経由で収集する場合は `ingest` を使ってください）")
+        return 1
+    audience_path = cfg.path(AUDIENCE_F)
+    if not audience_path.exists():
+        _log("audience.json が無いので先に `audience` を実行します…")
+        rc = cmd_audience(cfg, args)
+        if rc:
+            return rc
+    audience = read_json(audience_path)
+    posts_per_user = int(cfg.raw.get("nob_kit", {}).get("posts_per_user")
+                         or cfg.raw.get("collection", {}).get("posts_per_user", 20))
+    collect_own = not args.no_own
+    stats = run_collection(cfg, audience, x, posts_per_user, collect_own, _log)
+    _log(f"=== 収集完了: audience {stats['audience_posts']}ツイート / "
+         f"{stats['sampled_users']}ユーザー / 自TL {stats['own_posts']}ツイート ===")
     return 0
 
 
@@ -191,17 +223,28 @@ def cmd_report(cfg: Config, args) -> int:
 
 def cmd_run(cfg: Config, args) -> int:
     _log("=== フルパイプライン実行 ===")
-    for fn in (cmd_values, cmd_audience, cmd_ingest):
+    for fn in (cmd_values, cmd_audience):
         rc = fn(cfg, args)
         if rc:
             return rc
-    # ingest 後にデータが無いとその先が動かないので確認
+
+    # 収集フェーズ: X_BEARER_TOKEN があれば自動収集、無ければ nob キット取り込み
+    x_available = XClient(verbose=False).available
+    if x_available and not args.no_collect:
+        rc = cmd_collect(cfg, args)
+        if rc:
+            return rc
+    else:
+        cmd_ingest(cfg, args)
+
     if not load_posts_jsonl(cfg.path(POSTS_F)):
-        _log("\nツイート収集データがまだありません。次を実施してください:")
-        _log(f"  1) git clone {cfg.nob_kit_path if '/' in cfg.nob_kit_path else 'https://github.com/nobphotographr/x-audience-research-kit'}")
-        _log(f"  2) 生成した {cfg.path(RESEARCH_F).name} を kit にコピー")
-        _log("  3) kit で grok-search → hydrate → timelines → prepare-analysis")
-        _log("  4) この config の nob_kit.path/data_dir を合わせて再度 `run`")
+        _log("\nツイート収集データがまだありません。いずれかを実施してください:")
+        _log("  A) 自動収集: X API を課金し X_BEARER_TOKEN を設定 → `python3 tmark.py run`")
+        _log("  B) nob キット経由:")
+        _log(f"     1) git clone https://github.com/nobphotographr/x-audience-research-kit")
+        _log(f"     2) 生成した {cfg.path(RESEARCH_F).name} を kit にコピー")
+        _log("     3) kit で grok-search → hydrate → timelines → prepare-analysis")
+        _log("     4) config の nob_kit.path/data_dir を合わせて `python3 tmark.py run`")
         _log("\n（動作確認だけしたい場合は --allow-sample を付けて実行してください）")
         return 0
     for fn in (cmd_timeline, cmd_match, cmd_actions, cmd_report):
@@ -219,13 +262,18 @@ def main(argv=None) -> int:
 
     cmds = {
         "doctor": cmd_doctor, "values": cmd_values, "audience": cmd_audience,
-        "ingest": cmd_ingest, "timeline": cmd_timeline, "match": cmd_match,
-        "actions": cmd_actions, "report": cmd_report, "run": cmd_run,
+        "collect": cmd_collect, "ingest": cmd_ingest, "timeline": cmd_timeline,
+        "match": cmd_match, "actions": cmd_actions, "report": cmd_report,
+        "run": cmd_run,
     }
     for name in cmds:
         p = sub.add_parser(name)
         p.add_argument("--config", "-c", default="config.json", help="設定ファイル")
         p.add_argument("--top-k", type=int, default=10, help="match: 層ごとの上位件数")
+        p.add_argument("--no-own", action="store_true",
+                       help="collect: 自アカウントのタイムライン収集をスキップ")
+        p.add_argument("--no-collect", action="store_true",
+                       help="run: X API 自動収集を使わず nob キット取り込みにする")
         p.add_argument("--allow-sample", action="store_true",
                        help="ingest: nob データが無い時 examples のサンプルを使う")
 

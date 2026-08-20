@@ -112,11 +112,14 @@ def normalize_record(rec: dict) -> Optional[Post]:
                 return _as_int(metrics[n])
         return 0
 
+    author_obj = rec.get("author")
+    author_from_obj = author_obj.get("username", "") if isinstance(author_obj, dict) else ""
+    author_flat = author_obj if isinstance(author_obj, str) else ""
     author = (
         rec.get("author_username")
         or rec.get("username")
-        or (rec.get("author") or {}).get("username", "") if isinstance(rec.get("author"), dict)
-        else rec.get("author")
+        or author_from_obj
+        or author_flat
         or rec.get("screen_name")
         or ""
     )

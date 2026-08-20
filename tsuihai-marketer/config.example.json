@@ -15,6 +15,9 @@
     "sample_size": 100,
     "language": "ja"
   },
+  "collection": {
+    "posts_per_user": 20
+  },
   "llm": {
     "provider": "grok",
     "model": "grok-3-latest",

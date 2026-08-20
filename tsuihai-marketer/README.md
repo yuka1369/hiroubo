@@ -21,9 +21,9 @@
  ②オーディエンス設計 audience.json           … 価値を欲する100件のユーザー層＋X検索クエリ
       │            research.generated.json  … ★nobキットに渡す収集設定を自動生成
       │
- 〜〜〜 ここで nob さんの x-audience-research-kit がツイートを収集 〜〜〜
-      │
- ③取り込み        audience_posts.jsonl    … 収集ツイートを正規化
+ ③ツイート収集      audience_posts.jsonl    … 【自動】X APIでサンプリング＋各ユーザーのTL取得
+      │            own_timeline.jsonl      …          ＋自分のツイ廃垢のTLも自動取得
+      │            （X_BEARER_TOKEN無しなら nob キットで収集 → 正規化取り込み）
       │
  ④タイムライン予測  timeline_prediction.json… 各層のTLに流れる既存ツイートの"型"を推定
       │
@@ -40,7 +40,7 @@
 |---|---|
 | プロダクトに含まれる価値の要素を抽出 | ① `values` |
 | その価値を必要とするユーザー層を100件サンプリング | ② `audience`（+ nobキットで実収集） |
-| そのユーザのツイートを複数件取得 | nobキット `hydrate` / `timelines` → ③ `ingest` |
+| そのユーザのツイートを複数件取得 | ③ `collect`（X API直叩き・自動）または nobキット→ `ingest` |
 | タイムラインに表示される既存ツイートを予測 | ④ `timeline` |
 | 自分のツイ廃アカウントから似たツイートを割り出す | ⑤ `match` |
 | ユーザへの表示率をあげるアクションを予測 | ⑥ `actions` |
@@ -64,61 +64,57 @@ LLM 無し（`llm.provider: "none"`）だと価値抽出・タイムライン予
 
 ## 🔑 本番の使い方（Grok / X API 課金あり）
 
-### 1. LLM を有効化（価値抽出・予測・アクション設計の精度が上がる）
-
-`config.json` を作り（`config.example.json` をコピー）、`llm` を設定:
-
-```json
-"llm": { "provider": "grok", "model": "grok-3-latest" }
-```
-
-環境変数に API キーを入れる（`.env.example` 参照）:
+### 1. 環境変数を設定（`.env.example` 参照）
 
 ```bash
-export XAI_API_KEY=xai-...        # Grok を使う場合
-# export ANTHROPIC_API_KEY=sk-... # Claude を使う場合は provider を "anthropic" に
+export XAI_API_KEY=xai-...        # 価値抽出・予測・アクション設計に使う Grok
+# export ANTHROPIC_API_KEY=sk-... # Claude を使う場合は config の provider を "anthropic" に
+export X_BEARER_TOKEN=...         # ★これがあると ③収集が全自動になる（X API 課金が必要）
 ```
 
-### 2. 価値抽出 → オーディエンス設計
+`config.json` を作り（`config.example.json` をコピー）、`llm.provider` を `"grok"` に。
+
+### 2. 全自動で回す（推奨）
+
+```bash
+python3 tmark.py run --config config.json
+```
+
+これだけで **①価値抽出 → ②オーディエンス設計 → ③X APIでツイート収集
+（オーディエンスのサンプリング＋各ユーザーのTL取得＋自分のツイ廃垢のTL取得）
+→ ④TL予測 → ⑤類似マッチ → ⑥アクション → レポート** まで一気通貫します。
+
+`X_BEARER_TOKEN` があるかどうかで収集方式が自動で切り替わります:
+- **あり** → `collect`（X API v2 を直接叩いて自動収集）
+- **なし** → `ingest`（後述の nob キットで収集したデータを取り込み）
+
+収集だけ単独で回すこともできます:
+
+```bash
+python3 tmark.py collect --config config.json          # 自動収集（自TLも取得）
+python3 tmark.py collect --config config.json --no-own # 自TL収集はスキップ
+```
+
+`collect` は `data/sampled_users.json`（サンプリングしたユーザー台帳）も残します。
+`config.json` の `collection.posts_per_user`（既定20）で 1 ユーザーあたりの取得件数を調整できます。
+
+### 3.（任意）nob さんのキットで収集する場合
+
+X API を直接使わず nob さんの [x-audience-research-kit](https://github.com/nobphotographr/x-audience-research-kit)
+で収集したいときは、`audience` が出力する `data/research.generated.json` を渡します:
 
 ```bash
 python3 tmark.py values   --config config.json
-python3 tmark.py audience --config config.json
-```
-
-`data/research.generated.json` が出力されます。**これが nob キットへの受け渡しファイル**です。
-
-### 3. nob さんのキットでツイート収集（X API / Grok 課金）
-
-```bash
+python3 tmark.py audience --config config.json          # research.generated.json を出力
 git clone https://github.com/nobphotographr/x-audience-research-kit
 cd x-audience-research-kit
 cp ../tsuihai-marketer/data/research.generated.json research.json
-# kit 側の .env に X_BEARER_TOKEN を設定
-python3 xark.py doctor
-python3 xark.py plan            --config research.json   # 件数プレビュー
-python3 xark.py grok-search     --config research.json   # 意味検索で発見
-python3 xark.py hydrate         --config research.json   # X API でエンリッチ
-python3 xark.py timelines       --config research.json   # アカウントのタイムライン収集
-python3 xark.py prepare-analysis --config research.json  # data/processed/posts.jsonl 生成
+python3 xark.py plan --config research.json   # 以下 grok-search → hydrate → timelines → prepare-analysis
+cd -
+python3 tmark.py run --config config.json --no-collect  # nob キット出力を取り込んで分析
 ```
 
-`config.json` の `nob_kit.path` を clone 先に合わせておきます。
-
-### 4. 分析 → レポート
-
-```bash
-python3 tmark.py ingest   --config config.json   # posts.jsonl を取り込み
-python3 tmark.py timeline --config config.json
-python3 tmark.py match    --config config.json
-python3 tmark.py actions  --config config.json
-python3 tmark.py report   --config config.json
-# もしくは全部まとめて:
-python3 tmark.py run      --config config.json
-```
-
-自分のツイ廃アカウントのツイートは `own_account.timeline_file`（JSONL）に置きます。
-nob キットの `timelines` で自分の handle を対象に取得したものをそのまま使えます。
+`config.json` の `nob_kit.path` / `nob_kit.data_dir` を clone 先に合わせておきます。
 
 ---
 
@@ -161,7 +157,7 @@ nob キットの `timelines` で自分の handle を対象に取得したもの�
 
 ```
 tsuihai-marketer/
-├── tmark.py                     # CLI エントリ（doctor/values/audience/ingest/timeline/match/actions/report/run）
+├── tmark.py                     # CLI（doctor/values/audience/collect/ingest/timeline/match/actions/report/run）
 ├── config.example.json          # 設定テンプレ
 ├── config.demo.json             # サンプルデータで動くデモ設定
 ├── .env.example
@@ -169,6 +165,8 @@ tsuihai-marketer/
 │   ├── llm.py                   # Grok/Claude ラッパー（urllib のみ）
 │   ├── textutil.py              # 日本語対応 TF-IDF / コサイン類似度
 │   ├── config.py                # 設定 & I/O
+│   ├── xclient.py               # ③X API v2 クライアント（Bearer / urllib のみ）
+│   ├── collect.py               # ③自動収集（サンプリング＋TL取得＋自TL取得）
 │   ├── ingest.py                # nobキット出力の正規化
 │   ├── value_extraction.py      # ①価値抽出
 │   ├── audience.py              # ②オーディエンス設計 + research.json 生成
