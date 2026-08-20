@@ -79,8 +79,24 @@ class LLMClient:
         raw = self.chat(system + guard, user)
         return _extract_json(raw)
 
+    def grok_search_json(self, system: str, user: str,
+                         search_parameters: dict) -> Any:
+        """Grok の Live Search を使って X 等を検索し、JSON を返させる。
+
+        戻り値: (parsed_json, citations)
+        Grok(xAI) 専用。他プロバイダでは LLMError。
+        """
+        if self.config.provider != "grok" or not self.available:
+            raise LLMError("grok_search は Grok(xAI) かつ XAI_API_KEY 設定時のみ利用可能です。")
+        guard = "\n\n重要: 出力は JSON のみ。前置き・説明・コードフェンスは一切禁止。"
+        content, citations = self._grok(system + guard, user,
+                                        search_parameters=search_parameters,
+                                        return_citations=True)
+        return _extract_json(content), citations
+
     # ---- providers -----------------------------------------------------
-    def _grok(self, system: str, user: str) -> str:
+    def _grok(self, system: str, user: str, *, search_parameters: dict = None,
+              return_citations: bool = False):
         body = {
             "model": self.config.model,
             "temperature": self.config.temperature,
@@ -90,12 +106,17 @@ class LLMClient:
                 {"role": "user", "content": user},
             ],
         }
+        if search_parameters:
+            body["search_parameters"] = search_parameters
         data = self._post(
             "https://api.x.ai/v1/chat/completions",
             body,
             {"Authorization": f"Bearer {self._key}"},
         )
-        return data["choices"][0]["message"]["content"]
+        content = data["choices"][0]["message"]["content"]
+        if return_citations:
+            return content, data.get("citations") or []
+        return content
 
     def _anthropic(self, system: str, user: str) -> str:
         body = {

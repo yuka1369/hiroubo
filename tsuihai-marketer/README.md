@@ -4,10 +4,14 @@
 彼らのタイムラインを予測し、自分のツイ廃アカウントの中から"刺さるツイート"を割り出し、
 表示率を上げるアクションまで設計する** — ガチガチのデータ分析エンジンです。
 
-ツイート収集は **nob さんの [x-audience-research-kit](https://github.com/nobphotographr/x-audience-research-kit)** に委譲し、
-本ツールはその前後の「価値抽出 → オーディエンス設計 → タイムライン予測 → 類似マッチ → アクション予測」を担います。
+> **🔵 このブランチは Grok 抽出版です。** ツイート収集を **Grok(xAI) の Live Search だけ**で行い、
+> nob さんのキットや X API(Bearer) を使いません。必要な鍵は **`XAI_API_KEY` のみ**。
+> （X API で厳密な public_metrics を使う版は `claude/twitter-marketer-analyzer-qgve19` ブランチにあります。）
 
-> 依存パッケージ **0**（Python 3.10+ 標準ライブラリのみ）。nob さんのキットと同じ思想です。
+本ツールは 価値抽出 → オーディエンス設計 → **Grokでツイート抽出** → タイムライン予測 →
+類似マッチ → ユーザー別TOP出し → アクション予測 を一気通貫で行います。
+
+> 依存パッケージ **0**（Python 3.10+ 標準ライブラリのみ）。
 
 ---
 
@@ -21,9 +25,9 @@
  ②オーディエンス設計 audience.json           … 価値を欲する100件のユーザー層＋X検索クエリ
       │            research.generated.json  … ★nobキットに渡す収集設定を自動生成
       │
- ③ツイート収集      audience_posts.jsonl    … 【自動】X APIでサンプリング＋各ユーザーのTL取得
-      │            own_timeline.jsonl      …          ＋自分のツイ廃垢のTLも自動取得
-      │            （X_BEARER_TOKEN無しなら nob キットで収集 → 正規化取り込み）
+ ③Grokでツイート抽出 audience_posts.jsonl    … 【Grok Live Search】各層の実在ユーザーとその投稿を抽出
+      │            own_timeline.jsonl      …          ＋自分のツイ廃垢のTLも抽出
+      │            sampled_users.json      …          抽出ユーザー台帳＋Grokの引用(citations)
       │
  ④タイムライン予測  timeline_prediction.json… 各層のTLに流れる既存ツイートの"型"を推定
       │
@@ -41,7 +45,7 @@
 |---|---|
 | プロダクトに含まれる価値の要素を抽出 | ① `values` |
 | その価値を必要とするユーザー層を100件サンプリング | ② `audience`（+ nobキットで実収集） |
-| そのユーザのツイートを複数件取得 | ③ `collect`（X API直叩き・自動）または nobキット→ `ingest` |
+| そのユーザのツイートを複数件取得 | ③ `collect`（Grok Live Search で抽出） |
 | タイムラインに表示される既存ツイートを予測 | ④ `timeline` |
 | 自分のツイ廃アカウントから似たツイートを割り出す | ⑤ `match`（層単位）／`target`（ユーザー単位のTOP出し★） |
 | ユーザへの表示率をあげるアクションを予測 | ⑥ `actions` ＋ `target`（生成ツイート・ネットワーク行動） |
@@ -83,59 +87,48 @@ LLM 無し（`llm.provider: "none"`）だと価値抽出・タイムライン予
 
 ---
 
-## 🔑 本番の使い方（Grok / X API 課金あり）
+## 🔑 本番の使い方（Grok 課金のみ）
 
 ### 1. 環境変数を設定（`.env.example` 参照）
 
 ```bash
-export XAI_API_KEY=xai-...        # 価値抽出・予測・アクション設計に使う Grok
-# export ANTHROPIC_API_KEY=sk-... # Claude を使う場合は config の provider を "anthropic" に
-export X_BEARER_TOKEN=...         # ★これがあると ③収集が全自動になる（X API 課金が必要）
+export XAI_API_KEY=xai-...   # これ1つだけ。価値抽出・ツイート抽出・予測すべてに使う
 ```
 
-`config.json` を作り（`config.example.json` をコピー）、`llm.provider` を `"grok"` に。
+`config.json` を作り（`config.example.json` をコピー）、次の2箇所を確認:
 
-### 2. 全自動で回す（推奨）
+```json
+"llm":        { "provider": "grok", "model": "grok-3-latest" },
+"collection": { "provider": "grok", "posts_per_user": 15 }
+```
+
+### 2. 全自動で回す
 
 ```bash
 python3 tmark.py run --config config.json
 ```
 
-これだけで **①価値抽出 → ②オーディエンス設計 → ③X APIでツイート収集
-（オーディエンスのサンプリング＋各ユーザーのTL取得＋自分のツイ廃垢のTL取得）
-→ ④TL予測 → ⑤類似マッチ → ⑥アクション → レポート** まで一気通貫します。
-
-`X_BEARER_TOKEN` があるかどうかで収集方式が自動で切り替わります:
-- **あり** → `collect`（X API v2 を直接叩いて自動収集）
-- **なし** → `ingest`（後述の nob キットで収集したデータを取り込み）
+これだけで **①価値抽出 → ②オーディエンス設計 → ③Grokでツイート抽出
+（各層に合う実在ユーザーとその投稿を Live Search で抽出＋自分のツイ廃垢のTLも抽出）
+→ ④TL予測 → ⑤類似マッチ → ⑥ユーザー別TOP出し → ⑦アクション → レポート**
+まで一気通貫します。`data/sampled_users.json` に抽出ユーザー台帳と Grok の引用(citations)も残ります。
 
 収集だけ単独で回すこともできます:
 
 ```bash
-python3 tmark.py collect --config config.json          # 自動収集（自TLも取得）
-python3 tmark.py collect --config config.json --no-own # 自TL収集はスキップ
+python3 tmark.py collect --config config.json           # Grok抽出（自TLも）
+python3 tmark.py collect --config config.json --no-own  # 自TL抽出はスキップ
 ```
 
-`collect` は `data/sampled_users.json`（サンプリングしたユーザー台帳）も残します。
-`config.json` の `collection.posts_per_user`（既定20）で 1 ユーザーあたりの取得件数を調整できます。
+### 3. Grok 抽出の仕組み
 
-### 3.（任意）nob さんのキットで収集する場合
+`grok_extract.py` が Grok chat completions の `search_parameters`（`sources:[{type:"x"}]`）を使い、
+各セグメントについて「該当する実在ユーザー＋最近の投稿」を構造化 JSON で返させます。
+自TLは `included_x_handles:[あなたのhandle]` で対象を絞って抽出します。
 
-X API を直接使わず nob さんの [x-audience-research-kit](https://github.com/nobphotographr/x-audience-research-kit)
-で収集したいときは、`audience` が出力する `data/research.generated.json` を渡します:
-
-```bash
-python3 tmark.py values   --config config.json
-python3 tmark.py audience --config config.json          # research.generated.json を出力
-git clone https://github.com/nobphotographr/x-audience-research-kit
-cd x-audience-research-kit
-cp ../tsuihai-marketer/data/research.generated.json research.json
-python3 xark.py plan --config research.json   # 以下 grok-search → hydrate → timelines → prepare-analysis
-cd -
-python3 tmark.py run --config config.json --no-collect  # nob キット出力を取り込んで分析
-```
-
-`config.json` の `nob_kit.path` / `nob_kit.data_dir` を clone 先に合わせておきます。
+> ⚠️ Grok による検索・要約ベースの抽出なので、エンゲージメントは**概算**です。
+> 厳密な public_metrics が必要なら X API 版ブランチ（`collection.provider:"xapi"` ＋ `X_BEARER_TOKEN`）を使ってください。
+> なお `--provider xapi` を付ければこのブランチでも X API 収集に切り替えられます。
 
 ---
 
@@ -186,9 +179,10 @@ tsuihai-marketer/
 │   ├── llm.py                   # Grok/Claude ラッパー（urllib のみ）
 │   ├── textutil.py              # 日本語対応 TF-IDF / コサイン類似度
 │   ├── config.py                # 設定 & I/O
-│   ├── xclient.py               # ③X API v2 クライアント（Bearer / urllib のみ）
-│   ├── collect.py               # ③自動収集（サンプリング＋TL取得＋自TL取得）
-│   ├── ingest.py                # nobキット出力の正規化
+│   ├── grok_extract.py          # ③Grok Live Search 抽出（★このブランチの主役）
+│   ├── xclient.py               # ③X API v2 クライアント（--provider xapi 用・任意）
+│   ├── collect.py               # ③収集オーケストレーション（provider分岐）
+│   ├── ingest.py                # ツイートデータの正規化
 │   ├── value_extraction.py      # ①価値抽出
 │   ├── audience.py              # ②オーディエンス設計 + research.json 生成
 │   ├── timeline_predict.py      # ④タイムライン予測

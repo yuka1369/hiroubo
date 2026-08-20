@@ -1,0 +1,363 @@
+<title>ツイ廃マーケター Grok</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@500;700;900&family=Murecho:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap">
+<style>
+:root{
+  --bg:#F6F6FB; --surface:#FFFFFF; --surface-2:#EEEDF6; --ink:#17161F; --muted:#63617A;
+  --line:#E2E0EE; --accent:#5B4BE0; --accent-strong:#4130BE; --accent-soft:rgba(91,75,224,.12);
+  --live:#0FA574; --live-soft:rgba(15,165,116,.13); --gen:#C56A16; --gen-soft:rgba(197,106,22,.13);
+  --shadow:0 1px 2px rgba(23,22,31,.05),0 10px 30px rgba(23,22,31,.07); --r:14px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0E0D14; --surface:#17161F; --surface-2:#211F2C; --ink:#EAE9F2; --muted:#9A98AE;
+  --line:#2A2836; --accent:#8A7BF2; --accent-strong:#ABA0F8; --accent-soft:rgba(138,123,242,.18);
+  --live:#33D6A0; --live-soft:rgba(51,214,160,.16); --gen:#F0A24E; --gen-soft:rgba(240,162,78,.18);
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);
+}}
+:root[data-theme="dark"]{
+  --bg:#0E0D14; --surface:#17161F; --surface-2:#211F2C; --ink:#EAE9F2; --muted:#9A98AE;
+  --line:#2A2836; --accent:#8A7BF2; --accent-strong:#ABA0F8; --accent-soft:rgba(138,123,242,.18);
+  --live:#33D6A0; --live-soft:rgba(51,214,160,.16); --gen:#F0A24E; --gen-soft:rgba(240,162,78,.18);
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);
+}
+*{box-sizing:border-box} html,body{margin:0}
+body{background:var(--bg); color:var(--ink); font-family:"Murecho",system-ui,sans-serif;
+  line-height:1.6; -webkit-font-smoothing:antialiased}
+.wrap{max-width:1200px; margin:0 auto; padding:26px 20px 64px}
+h1,h2,h3,h4{font-family:"Zen Kaku Gothic New",system-ui,sans-serif; text-wrap:balance; margin:0}
+.mono{font-family:"Space Mono",ui-monospace,monospace; font-variant-numeric:tabular-nums}
+
+header{margin-bottom:20px}
+.eyebrow{display:inline-flex; align-items:center; gap:8px; font-family:"Space Mono",monospace;
+  font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--accent-strong); margin-bottom:10px}
+.gtag{background:var(--accent); color:#fff; padding:2px 8px; border-radius:6px; font-weight:700; letter-spacing:.04em}
+:root[data-theme="dark"] .gtag,:root:not([data-theme="light"]) .gtag{color:#12101c}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .gtag{color:#12101c}}
+h1{font-size:clamp(27px,4.4vw,42px); font-weight:900; letter-spacing:-.01em; line-height:1.09}
+.lede{color:var(--muted); max-width:62ch; margin-top:12px; font-size:15px}
+
+.panel{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); box-shadow:var(--shadow)}
+.panel-head{padding:15px 18px 12px; border-bottom:1px solid var(--line)}
+.panel-head h2{font-size:15px; font-weight:700}
+.panel-head .sub{font-size:12px; color:var(--muted); margin-top:3px}
+
+/* data source */
+.source{margin-top:18px; padding:16px 18px}
+.tabs{display:flex; gap:6px; margin-bottom:14px}
+.tab{font:inherit; font-size:13px; padding:7px 14px; border-radius:9px; cursor:pointer;
+  background:var(--surface-2); border:1px solid transparent; color:var(--muted)}
+.tab.on{background:var(--accent-soft); border-color:var(--accent); color:var(--accent-strong); font-weight:700}
+.tab:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+.prodrow{display:flex; flex-wrap:wrap; gap:10px 16px; align-items:center; margin-bottom:6px}
+.field{display:flex; flex-direction:column; gap:4px}
+.field label{font-size:11px; font-family:"Space Mono",monospace; letter-spacing:.08em;
+  text-transform:uppercase; color:var(--muted)}
+.field input,.paste textarea{font:inherit; background:var(--bg); color:var(--ink);
+  border:1px solid var(--line); border-radius:9px; padding:9px 11px}
+.field input{min-width:200px}
+.field.grow{flex:1} .field.grow input{width:100%}
+.paste{display:none; grid-template-columns:1fr 1fr; gap:12px; margin-top:12px}
+.paste.show{display:grid} @media(max-width:720px){.paste{grid-template-columns:1fr}}
+.paste .field{gap:5px} .paste textarea{width:100%; min-height:150px; resize:vertical; font-size:12.5px;
+  font-family:"Space Mono",monospace; line-height:1.5}
+.actions{display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-top:13px}
+.btn{font:inherit; font-weight:700; font-size:13.5px; padding:9px 18px; border-radius:10px; cursor:pointer;
+  border:1px solid transparent; background:var(--accent); color:#fff}
+:root[data-theme="dark"] .btn,:root:not([data-theme="light"]) .btn{color:#12101c}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .btn{color:#12101c}}
+.btn.ghost{background:transparent; border-color:var(--line); color:var(--accent-strong)}
+.btn:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+.err{color:#c0392b; font-size:12.5px} :root[data-theme="dark"] .err{color:#ff8a7a}
+.linklike{background:none;border:none;color:var(--accent-strong);cursor:pointer;font:inherit;
+  font-size:12.5px;text-decoration:underline;padding:0}
+
+.grid{display:grid; grid-template-columns:340px 1fr; gap:18px; margin-top:18px}
+@media (max-width:860px){.grid{grid-template-columns:1fr}}
+.userlist{padding:8px; display:flex; flex-direction:column; gap:6px; max-height:620px; overflow-y:auto}
+.ucard{border:1px solid transparent; border-radius:11px; padding:11px 12px; cursor:pointer;
+  background:transparent; text-align:left; width:100%; font:inherit; color:inherit; transition:.15s}
+.ucard:hover{background:var(--surface-2)}
+.ucard.active{background:var(--accent-soft); border-color:var(--accent)}
+.ucard:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+.ucard .row1{display:flex; align-items:baseline; justify-content:space-between; gap:8px}
+.ucard .handle{font-family:"Space Mono",monospace; font-weight:700; font-size:14px}
+.ucard .reachnum{font-family:"Space Mono",monospace; font-size:13px; color:var(--accent-strong)}
+.ucard .seg{font-size:11.5px; color:var(--muted); margin-top:1px}
+.meter{height:6px; border-radius:999px; background:var(--surface-2); margin-top:8px; overflow:hidden}
+.meter>i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--accent),var(--accent-strong));transition:width .5s cubic-bezier(.2,.7,.2,1)}
+
+.detail{padding:18px 20px}
+.who{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap}
+.who .h{font-family:"Space Mono",monospace; font-weight:700; font-size:20px}
+.who .segtag{font-size:12px; padding:2px 9px; border-radius:999px; background:var(--surface-2); color:var(--muted)}
+.section-label{font-family:"Space Mono",monospace; font-size:11.5px; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--muted); margin:20px 0 9px}
+.chips{display:flex; flex-wrap:wrap; gap:7px}
+.chip{font-size:12.5px; padding:4px 10px; border-radius:8px; background:var(--surface-2); border:1px solid var(--line)}
+.chip.net{background:var(--gen-soft); border-color:transparent; color:var(--gen);
+  font-family:"Space Mono",monospace; font-weight:700}
+.thesis{margin-top:18px; padding:13px 15px; border-radius:11px; background:var(--accent-soft);
+  border:1px solid var(--accent); font-size:13.5px}
+.thesis b{color:var(--accent-strong)}
+.rankhead{display:flex; align-items:baseline; justify-content:space-between; margin:22px 0 4px; gap:10px}
+.rankhead h3{font-size:16px; font-weight:700} .rankhead .hint{font-size:12px; color:var(--muted)}
+.tweet{border:1px solid var(--line); border-radius:12px; padding:13px 14px; margin-top:10px; background:var(--surface)}
+.tweet.top{border-color:var(--live); box-shadow:0 0 0 3px var(--live-soft)}
+.t-top{display:flex; align-items:center; gap:8px; margin-bottom:7px}
+.rankn{font-family:"Space Mono",monospace; font-size:12px; color:var(--muted); min-width:22px}
+.badge{font-size:11px; font-family:"Space Mono",monospace; font-weight:700; letter-spacing:.05em;
+  padding:2px 8px; border-radius:6px; background:var(--live); color:#fff}
+:root[data-theme="dark"] .badge,:root:not([data-theme="light"]) .badge{color:#04231a}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .badge{color:#04231a}}
+.simval{margin-left:auto; font-family:"Space Mono",monospace; font-size:13px; font-weight:700; color:var(--accent-strong)}
+.eng{font-size:11px; color:var(--muted); font-family:"Space Mono",monospace}
+.tweet .body{font-size:14.5px; line-height:1.55}
+.simbar{height:5px; border-radius:999px; background:var(--surface-2); margin-top:10px; overflow:hidden}
+.simbar>i{display:block; height:100%; border-radius:999px; background:var(--accent); transition:width .55s cubic-bezier(.2,.7,.2,1)}
+.overlap{margin-top:8px; font-size:11.5px; color:var(--muted)}
+.overlap span{font-family:"Space Mono",monospace; background:var(--surface-2); padding:1px 6px; border-radius:5px; margin-right:5px; display:inline-block; margin-bottom:3px}
+
+.how{margin-top:24px; display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:14px}
+.how .step{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:15px 16px; box-shadow:var(--shadow)}
+.how .n{font-family:"Space Mono",monospace; font-weight:700; color:var(--accent-strong); font-size:13px}
+.how h4{font-size:14.5px; margin:6px 0 5px; font-weight:700}
+.how p{font-size:12.5px; color:var(--muted); margin:0; line-height:1.55}
+footer{margin-top:32px; padding-top:18px; border-top:1px solid var(--line); color:var(--muted); font-size:12.5px}
+.toggle{position:fixed; top:14px; right:14px; z-index:10; background:var(--surface); border:1px solid var(--line);
+  color:var(--muted); border-radius:999px; width:38px; height:38px; cursor:pointer; font-size:16px; box-shadow:var(--shadow)}
+.toggle:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{transition:none !important}}
+</style>
+
+<button class="toggle" id="themeToggle" aria-label="テーマ切替">◐</button>
+<div class="wrap">
+  <header>
+    <div class="eyebrow"><span class="gtag">Grok edition</span> ツイ廃マーケター / live search</div>
+    <h1>Grokで抽出した相手に、あなたのツイ廃をTOP出しする</h1>
+    <p class="lede">nobさんのキットもX APIも使わず、Grokの Live Search でオーディエンスを抽出する版。
+      下は概念デモ：サンプル、または<b>あなたがGrokで抽出したデータを貼り付けて</b>、TLに最も溶け込む自分のツイートを
+      ブラウザ内のTF-IDF類似度でTOP出しします。</p>
+  </header>
+
+  <section class="panel source" aria-label="データソース">
+    <div class="tabs" role="tablist">
+      <button class="tab on" id="tabSample" role="tab" aria-selected="true">サンプルで見る</button>
+      <button class="tab" id="tabPaste" role="tab" aria-selected="false">自分のGrokデータを貼る</button>
+    </div>
+    <div class="prodrow">
+      <div class="field"><label>Product</label><input id="pName" value="CallMe"></div>
+      <div class="field grow"><label>ひとことで</label>
+        <input id="pDesc" value="予定の少し前に『電話がかかってくる』アラームアプリ。通知を見流す人向けに無視しづらく知らせる。"></div>
+    </div>
+    <div class="paste" id="pasteArea">
+      <div class="field"><label>自分のツイ廃ツイート（1行1ツイート／またはJSON配列）</label>
+        <textarea id="ownInput" placeholder="通知は見た瞬間に脳から消える…&#10;アラーム10個かけて全部止める特技…"></textarea></div>
+      <div class="field"><label>オーディエンス（grok_extract の users JSON）</label>
+        <textarea id="audInput" placeholder='{"users":[{"handle":"asa_nigate","tweets":[{"text":"また寝坊…","mentions":["nemui_life"]}]}]}'></textarea></div>
+    </div>
+    <div class="actions">
+      <button class="btn" id="runBtn">解析する</button>
+      <button class="linklike" id="loadSample" style="display:none">サンプルを貼り付ける</button>
+      <button class="btn ghost" id="dlBtn" style="display:none">結果をJSONで保存</button>
+      <span class="err" id="errMsg"></span>
+    </div>
+  </section>
+
+  <div class="grid">
+    <aside class="panel">
+      <div class="panel-head"><h2>ターゲット候補</h2>
+        <div class="sub">reach 降順 ＝ 狙うべき順（類似度 × ネットワーク到達性）</div></div>
+      <div class="userlist" id="userList" role="listbox" aria-label="ターゲット候補"></div>
+    </aside>
+    <main class="panel"><div class="detail" id="detail"></div></main>
+  </div>
+
+  <section class="how" aria-label="仕組み">
+    <div class="step"><div class="n">01</div><h4>Grokで層を抽出</h4><p>Live Search（sources:x）で、価値に反応しそうな実在ユーザーと投稿を構造化抽出。</p></div>
+    <div class="step"><div class="n">02</div><h4>TLとネットワーク</h4><p>抽出投稿から話題と、絡む相手（＝グラフの隣人）を取り出す。</p></div>
+    <div class="step"><div class="n">03</div><h4>自分の履歴と照合</h4><p>ツイ廃履歴を、そのユーザーのTL語彙とのコサイン類似度でランク付け。</p></div>
+    <div class="step"><div class="n">04</div><h4>TOPを出す</h4><p>最も溶け込む1本をTOP出し。本番CLIはここから生成ツイートやネットワーク行動も予測。</p></div>
+  </section>
+
+  <footer>
+    サンプル／貼り付けデータでの概念デモ（計算はすべてこのページ内）。本番エンジンは Python 製で、収集は
+    <b>Grok(xAI) の Live Search</b> のみを利用します（<span class="mono">XAI_API_KEY</span> だけで動作）。
+    Grokの抽出はエンゲージメント概算を含みます。公開ツイートの分析用途で、規約と各国法令に配慮してご利用ください。
+  </footer>
+</div>
+
+<script>
+// ===== サンプルデータ（grok_extract の出力形を模したもの）=====
+const SAMPLE_OWN = [
+ "通知って見た瞬間に脳から消えるよね。だから『無視できない』設計だけが勝つと思ってる",
+ "予定の5分前に『電話がかかってくる』って発想、自分みたいなADHDには刺さりすぎる。バナーじゃ無理なんよ",
+ "過集中で気づいたら夜。時間が溶ける現象、名前つけてほしい",
+ "アラーム10個かけて全部無意識に止める特技、履歴書に書けない",
+ "タスク管理、視覚化してないタスクは存在してないのと一緒。目に見えないと脳が認識しない",
+ "締切前日にだけ本気出す人間、逆算リマインドがないと詰む。前日の自分を信用するな",
+ "『あと5分で出るよ』を機械が言ってくれるだけで人生変わる。人間の付き添いがいなくても動ける",
+ "時間感覚がバグってる人向けの道具って本当に少ない。健常者向けの『ちゃんとした人用』ばっかり",
+ "薬飲む時間も忘れるからリマインダー山盛り。でもそのリマインダーも見ない",
+ "遅刻魔卒業したくて色々試したけど、結局『物理的に無視できない合図』が一番効いた",
+ "習慣化アプリ3日でアイコン見なくなる問題、通知を『電話』にしたら解決するのでは？と最近思ってる",
+ "在宅で時間の区切りが消えた人、始業と終業に『電話』鳴らすと脳が切り替わるよ",
+ "朝起きられない体質、目覚ましの音に慣れてしまうのが問題。毎回違う『着信』なら起きられた",
+ "やることリスト作る才能はあるのに実行が0。作って満足しがち",
+ "猫が可愛い。以上",
+ "今日のラーメン、二郎系。にんにく入れますか？→はい",
+ "新宿駅でまた迷子。方向音痴とADHDの合わせ技はきつい",
+ "子どもの送り迎え、毎回ギリギリで心臓に悪い。時間の逆算が本当に苦手",
+];
+const SAMPLE_AUD = {users:[
+ {handle:"asa_nigate", segment_name:"朝起きれない・遅刻", tweets:[
+   {text:"また寝坊した。アラーム5個かけたのに全部止めた記憶がない", mentions:["nemui_life"]},
+   {text:"朝起きられなくて仕事に遅刻。目覚まし意味ない体質っている？", mentions:[]},
+   {text:"二度寝の天才。目覚ましの音にもう体が慣れてしまった", mentions:["adhd_kaigi"]}]},
+ {handle:"kashuchu_zaitaku", segment_name:"過集中・在宅", tweets:[
+   {text:"在宅ワークで時間の区切りがなくて昼夜逆転してきた", mentions:["zaitaku_gumi"]},
+   {text:"集中してると時間が溶ける。気づいたら3時間経ってる過集中こわい", mentions:["toki_tomo"]},
+   {text:"始業と終業の合図がないと脳が切り替わらない", mentions:[]}]},
+ {handle:"task_migoroshi", segment_name:"タスク管理", tweets:[
+   {text:"タスク管理アプリ何個も入れては消してる。結局続かない", mentions:["adhd_kaigi"]},
+   {text:"やることリスト作るのは得意。実行が壊滅的", mentions:[]},
+   {text:"視覚化しないとタスクが存在しないのと同じになる", mentions:["task_ol"]}]},
+ {handle:"kusuri_wasure", segment_name:"薬・習慣リマインド", tweets:[
+   {text:"薬飲む時間も忘れる。毎日同じ時間って難しい", mentions:["adhd_kaigi"]},
+   {text:"習慣化アプリ、3日でアイコン見なくなる。通知も消してしまう", mentions:[]}]},
+ {handle:"tsuuchi_mienai", segment_name:"通知スルー", tweets:[
+   {text:"通知バナー、10秒で消えるから見逃す。しつこいくらいでちょうどいい", mentions:["nemui_life"]},
+   {text:"電話だと無視できないんだよな。バナー通知は本当に見えない", mentions:[]}]},
+ {handle:"neko_ramen_taro", segment_name:"（オフトピック多め）", tweets:[
+   {text:"今日のラーメンは家系。ライス無料は正義", mentions:["ramen_bot"]},
+   {text:"猫と昼寝した。しあわせ", mentions:[]}]},
+]};
+
+// ===== 日本語対応トークナイザ + TF-IDF =====
+const STOP=new Set(["こと","これ","それ","する","した","して","います","ます","です","でも","ない","なる","ある","いる","the","and","rt"]);
+const reURL=/https?:\/\/\S+/g, reMen=/@\w+/g, reAl=/[a-zA-Z0-9_]+/g, reCJK=/[぀-ヿ㐀-鿿一-龯々ー]+/g;
+function tokenize(t){let s=(t||"").normalize("NFKC").toLowerCase().replace(reURL," ").replace(reMen," ");const o=[];
+  (s.match(reAl)||[]).forEach(w=>{if(w.length>=2&&!STOP.has(w))o.push(w)});
+  (s.match(reCJK)||[]).forEach(c=>{for(let i=0;i<c.length-1;i++){const b=c.slice(i,i+2);if(!STOP.has(b))o.push(b)}});return o;}
+function buildIndex(docs){const dt=docs.map(tokenize),n=dt.length,df={};
+  dt.forEach(ts=>{new Set(ts).forEach(t=>df[t]=(df[t]||0)+1)});
+  const idf={};for(const t in df)idf[t]=Math.log((1+n)/(1+df[t]))+1;
+  const vec=ts=>{if(!ts.length)return{};const tf={};ts.forEach(t=>tf[t]=(tf[t]||0)+1);const v={};let nn=0;
+    for(const t in tf){const w=(tf[t]/ts.length)*(idf[t]||Math.log(1+n)+1);v[t]=w;nn+=w*w}nn=Math.sqrt(nn)||1;
+    for(const t in v)v[t]/=nn;return v;};
+  return{docVecs:dt.map(vec),vecText:x=>vec(tokenize(x))};}
+function cosine(a,b){let s=0;const[x,y]=Object.keys(a).length>Object.keys(b).length?[b,a]:[a,b];
+  for(const t in x)if(y[t])s+=x[t]*y[t];return s;}
+
+// ===== 解析 =====
+let ANALYZED=[], OWN=[], maxReach=1;
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function analyze(ownArr, audObj){
+  OWN = ownArr.map(t=> typeof t==="string"?{t}:{t:t.text||t.t||""}).filter(o=>o.t.trim());
+  const idx=buildIndex(OWN.map(o=>o.t));
+  const users=(audObj.users||audObj||[]).map(u=>{
+    const tweets=(u.tweets||[]).map(x=>typeof x==="string"?{text:x,mentions:[]}:x);
+    const profile=tweets.map(t=>t.text).join(" ");
+    const pv=idx.vecText(profile), pt=new Set(tokenize(profile));
+    const ranked=OWN.map(o=>{const sim=cosine(idx.vecText(o.t),pv);
+      const overlap=[...new Set(tokenize(o.t))].filter(x=>pt.has(x)).slice(0,7);
+      return {text:o.t, sim, overlap};}).filter(r=>r.sim>0).sort((a,b)=>b.sim-a.sim);
+    const ment=[...new Set(tweets.flatMap(t=>t.mentions||[]))];
+    const best=ranked[0]?ranked[0].sim:0;
+    const reach=best*(0.6+0.4*Math.min(1,ment.length/4));
+    const cnt={};tweets.forEach(t=>new Set(tokenize(t.text)).forEach(k=>cnt[k]=(cnt[k]||0)+1));
+    const topics=Object.entries(cnt).sort((a,b)=>b[1]-a[1]).slice(0,8).map(x=>x[0]);
+    return {handle:u.handle||"user", seg:u.segment_name||u.segment||"", ranked, ment, topics, reach};
+  }).filter(u=>u.ranked.length).sort((a,b)=>b.reach-a.reach);
+  ANALYZED=users; maxReach=Math.max(...users.map(u=>u.reach),0.0001);
+  renderList(); if(users.length) select(0); else document.getElementById("detail").innerHTML="<p>該当ユーザーがありません。</p>";
+  document.getElementById("dlBtn").style.display = users.length? "" : "none";
+}
+
+function renderList(){
+  const el=document.getElementById("userList"); el.innerHTML="";
+  ANALYZED.forEach((u,i)=>{const b=document.createElement("button");
+    b.className="ucard"+(i===0?" active":""); b.setAttribute("role","option"); b.dataset.i=i;
+    b.innerHTML=`<div class="row1"><span class="handle">@${esc(u.handle)}</span>
+      <span class="reachnum">${u.reach.toFixed(3)}</span></div>
+      <div class="seg">${esc(u.seg||"—")}</div>
+      <div class="meter"><i style="width:${(u.reach/maxReach*100).toFixed(0)}%"></i></div>`;
+    b.addEventListener("click",()=>select(i)); el.appendChild(b);});
+}
+
+function select(i){
+  document.querySelectorAll(".ucard").forEach((c,j)=>{const on=j===i;c.classList.toggle("active",on);c.setAttribute("aria-selected",on?"true":"false");});
+  const u=ANALYZED[i], maxSim=u.ranked[0].sim||1;
+  const net=u.ment.length? u.ment.map(m=>`<span class="chip net">@${esc(m)}</span>`).join("")
+    : `<span class="chip">（絡み先データなし）</span>`;
+  const tops=u.topics.map(t=>`<span class="chip">${esc(t)}</span>`).join("");
+  const tweets=u.ranked.slice(0,8).map((r,k)=>{const w=(r.sim/maxSim*100).toFixed(0);
+    const ov=r.overlap.length?`<div class="overlap">重なり: ${r.overlap.map(o=>`<span>${esc(o)}</span>`).join("")}</div>`:"";
+    return `<div class="tweet${k===0?" top":""}"><div class="t-top"><span class="rankn">#${k+1}</span>
+      ${k===0?'<span class="badge">TOP出し</span>':''}<span class="simval">sim ${r.sim.toFixed(3)}</span></div>
+      <div class="body">${esc(r.text)}</div><div class="simbar"><i style="width:${w}%"></i></div>${ov}</div>`;}).join("");
+  document.getElementById("detail").innerHTML=`
+    <div class="who"><span class="h">@${esc(u.handle)}</span>${u.seg?`<span class="segtag">${esc(u.seg)}</span>`:""}</div>
+    <div class="section-label">このユーザーのTL話題</div><div class="chips">${tops}</div>
+    <div class="section-label">ネットワーク隣人（絡む相手＝グラフの入口）</div><div class="chips">${net}</div>
+    <div class="thesis">TLに最も<b>溶け込む</b>自分のツイートほど、このユーザーのネットワークに入り<b>表示されやすい</b>。
+      reach = 最大類似度 × ネットワーク到達性。</div>
+    <div class="rankhead"><h3>あなたのツイ廃履歴 × @${esc(u.handle)}</h3><span class="hint">コサイン類似度・上位8本</span></div>${tweets}`;
+  requestAnimationFrame(()=>{document.querySelectorAll("#detail .simbar>i").forEach(el=>{const w=el.style.width;el.style.width="0%";requestAnimationFrame(()=>el.style.width=w);});});
+}
+
+// ===== 入力・タブ・ボタン =====
+let mode="sample";
+const tabS=document.getElementById("tabSample"),tabP=document.getElementById("tabPaste");
+const pasteArea=document.getElementById("pasteArea"),loadSample=document.getElementById("loadSample");
+function setMode(m){mode=m; const paste=m==="paste";
+  tabS.classList.toggle("on",!paste); tabP.classList.toggle("on",paste);
+  tabS.setAttribute("aria-selected",!paste); tabP.setAttribute("aria-selected",paste);
+  pasteArea.classList.toggle("show",paste); loadSample.style.display=paste?"":"none";}
+tabS.onclick=()=>{setMode("sample"); runSample();};
+tabP.onclick=()=>setMode("paste");
+loadSample.onclick=()=>{document.getElementById("ownInput").value=SAMPLE_OWN.join("\n");
+  document.getElementById("audInput").value=JSON.stringify(SAMPLE_AUD,null,2);};
+
+function runSample(){document.getElementById("errMsg").textContent="";
+  analyze(SAMPLE_OWN, SAMPLE_AUD);}
+function parseOwn(s){s=s.trim(); if(!s) return [];
+  if(s[0]==="["){return JSON.parse(s);} return s.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);}
+document.getElementById("runBtn").onclick=()=>{
+  const err=document.getElementById("errMsg"); err.textContent="";
+  if(mode==="sample"){runSample(); return;}
+  try{
+    const own=parseOwn(document.getElementById("ownInput").value);
+    const audRaw=document.getElementById("audInput").value.trim();
+    if(!own.length) throw new Error("自分のツイートを入れてください");
+    if(!audRaw) throw new Error("オーディエンスJSONを入れてください");
+    const aud=JSON.parse(audRaw);
+    analyze(own, aud);
+  }catch(e){err.textContent="読み込みエラー: "+e.message;}
+};
+
+// ダウンロード（downloads capability）
+document.getElementById("dlBtn").onclick=async ()=>{
+  const err=document.getElementById("errMsg"); err.textContent="";
+  const out={product:document.getElementById("pName").value,
+    generated_at:new Date().toISOString(),
+    targets:ANALYZED.map(u=>({handle:u.handle, segment:u.seg, reach_score:+u.reach.toFixed(4),
+      network:u.ment, timeline_topics:u.topics,
+      top_own_tweets:u.ranked.slice(0,5).map(r=>({text:r.text,similarity:+r.sim.toFixed(4)}))}))};
+  try{
+    const dl = window.claude && claude.use ? await claude.use("downloads") : null;
+    if(!dl){ err.textContent="このビューでは保存が使えません（claude.ai で開くと有効）"; return; }
+    await dl.save({filename:"tsuihai_targets.json", data:JSON.stringify(out,null,2)});
+  }catch(e){ if(e && e.code==="declined"){/* no-op */} else err.textContent="保存できませんでした: "+(e.message||e.code||e);}
+};
+
+// テーマトグル
+const root=document.documentElement;
+document.getElementById("themeToggle").onclick=()=>{const cur=root.getAttribute("data-theme");
+  const sys=matchMedia("(prefers-color-scheme:dark)").matches; const now=cur||(sys?"dark":"light");
+  root.setAttribute("data-theme", now==="dark"?"light":"dark");};
+
+runSample();
+</script>

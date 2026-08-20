@@ -16,7 +16,8 @@
     "language": "ja"
   },
   "collection": {
-    "posts_per_user": 20
+    "provider": "grok",
+    "posts_per_user": 15
   },
   "llm": {
     "provider": "grok",

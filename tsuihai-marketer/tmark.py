@@ -35,6 +35,7 @@ from tsuihai_marketer.audience import (  # noqa: E402
     build_audience, generate_nob_research_config,
 )
 from tsuihai_marketer.collect import run_collection  # noqa: E402
+from tsuihai_marketer.grok_extract import run_grok_extraction  # noqa: E402
 from tsuihai_marketer.config import (  # noqa: E402
     Config, load_config, read_json, write_json,
 )
@@ -82,23 +83,25 @@ def cmd_doctor(cfg: Config, args) -> int:
     if llm.config.provider == "anthropic" and not llm.available:
         print("    → 環境変数 ANTHROPIC_API_KEY を設定してください")
 
-    nob_path = cfg.resolve(cfg.nob_kit_path)
-    nob_data = cfg.resolve(cfg.nob_kit_path) / cfg.nob_data_dir
-    print(f"  nob kit path: {nob_path}  exists: {nob_path.exists()}")
-    print(f"  nob data dir: {nob_data}  exists: {nob_data.exists()}")
-    if not nob_path.exists():
-        print("    → git clone https://github.com/nobphotographr/x-audience-research-kit "
-              "して config の nob_kit.path を合わせてください")
+    provider = _collection_provider(cfg, args)
+    print(f"  収集 provider: {provider}  (grok=Grok抽出 / xapi=X API)")
+    has_xai = bool(os.environ.get("XAI_API_KEY") or os.environ.get("GROK_API_KEY"))
+    has_token = bool(os.environ.get("X_BEARER_TOKEN"))
+    print(f"  XAI_API_KEY: {'set' if has_xai else 'NOT set'}")
+    print(f"  X_BEARER_TOKEN: {'set' if has_token else 'NOT set'}")
+    if provider == "grok":
+        if has_xai and llm.config.provider == "grok":
+            print("    → Grok Live Search でツイート抽出できます (`collect` / `run`)")
+        else:
+            print("    → llm.provider=grok かつ XAI_API_KEY が必要です")
+    else:
+        if has_token:
+            print("    → X API 自動収集できます (`collect` / `run`)")
+        else:
+            print("    → X_BEARER_TOKEN を設定するか、collection.provider を \"grok\" に")
 
     own = cfg.resolve(cfg.own_timeline_file)
     print(f"  own timeline: {own}  exists: {own.exists()}")
-    has_token = bool(os.environ.get("X_BEARER_TOKEN"))
-    print(f"  X_BEARER_TOKEN: {'set' if has_token else 'NOT set'}")
-    if has_token:
-        print("    → 収集モード: X API 自動収集 (`collect` / `run`)")
-    else:
-        print("    → 収集モード: nob キット取り込み (`ingest`)。自動収集するなら X API を課金し "
-              "X_BEARER_TOKEN を設定してください")
     return 0
 
 
@@ -126,13 +129,15 @@ def cmd_audience(cfg: Config, args) -> int:
     return 0
 
 
+def _collection_provider(cfg: Config, args) -> str:
+    if getattr(args, "provider", None):
+        return args.provider
+    return (cfg.raw.get("collection", {}).get("provider") or "xapi").lower()
+
+
 def cmd_collect(cfg: Config, args) -> int:
-    """X API から直接ツイートを自動収集（オーディエンス＋自TL）。"""
-    x = XClient(verbose=True)
-    if not x.available:
-        _log("エラー: X_BEARER_TOKEN が未設定です。X API を課金して環境変数に設定してください。")
-        _log("      （nob キット経由で収集する場合は `ingest` を使ってください）")
-        return 1
+    """ツイートを自動収集（オーディエンス＋自TL）。provider=grok|xapi。"""
+    provider = _collection_provider(cfg, args)
     audience_path = cfg.path(AUDIENCE_F)
     if not audience_path.exists():
         _log("audience.json が無いので先に `audience` を実行します…")
@@ -140,11 +145,29 @@ def cmd_collect(cfg: Config, args) -> int:
         if rc:
             return rc
     audience = read_json(audience_path)
-    posts_per_user = int(cfg.raw.get("nob_kit", {}).get("posts_per_user")
-                         or cfg.raw.get("collection", {}).get("posts_per_user", 20))
+    posts_per_user = int(cfg.raw.get("collection", {}).get("posts_per_user")
+                         or cfg.raw.get("nob_kit", {}).get("posts_per_user", 20))
     collect_own = not args.no_own
+
+    if provider == "grok":
+        llm = _client(cfg)
+        if llm.config.provider != "grok" or not llm.available:
+            _log("エラー: Grok抽出には llm.provider=grok かつ XAI_API_KEY が必要です。")
+            return 1
+        _log("=== 収集: Grok Live Search 抽出モード（nob/X APIを使わない）===")
+        stats = run_grok_extraction(cfg, audience, llm, posts_per_user, collect_own, _log)
+        _log(f"=== 収集完了(Grok): audience {stats['audience_posts']}ツイート / "
+             f"{stats['sampled_users']}ユーザー / 自TL {stats['own_posts']}ツイート / "
+             f"引用 {stats['citations']}件 ===")
+        return 0
+
+    x = XClient(verbose=True)
+    if not x.available:
+        _log("エラー: X_BEARER_TOKEN が未設定です（provider=xapi）。")
+        _log("      Grok だけで抽出するなら config の collection.provider を \"grok\" に。")
+        return 1
     stats = run_collection(cfg, audience, x, posts_per_user, collect_own, _log)
-    _log(f"=== 収集完了: audience {stats['audience_posts']}ツイート / "
+    _log(f"=== 収集完了(X API): audience {stats['audience_posts']}ツイート / "
          f"{stats['sampled_users']}ユーザー / 自TL {stats['own_posts']}ツイート ===")
     return 0
 
@@ -255,9 +278,15 @@ def cmd_run(cfg: Config, args) -> int:
         if rc:
             return rc
 
-    # 収集フェーズ: X_BEARER_TOKEN があれば自動収集、無ければ nob キット取り込み
-    x_available = XClient(verbose=False).available
-    if x_available and not args.no_collect:
+    # 収集フェーズ: provider に応じて Grok抽出 / X API自動収集 / nobキット取り込み
+    provider = _collection_provider(cfg, args)
+    if args.no_collect:
+        cmd_ingest(cfg, args)
+    elif provider == "grok" and _client(cfg).available:
+        rc = cmd_collect(cfg, args)
+        if rc:
+            return rc
+    elif provider == "xapi" and XClient(verbose=False).available:
         rc = cmd_collect(cfg, args)
         if rc:
             return rc
@@ -266,13 +295,9 @@ def cmd_run(cfg: Config, args) -> int:
 
     if not load_posts_jsonl(cfg.path(POSTS_F)):
         _log("\nツイート収集データがまだありません。いずれかを実施してください:")
-        _log("  A) 自動収集: X API を課金し X_BEARER_TOKEN を設定 → `python3 tmark.py run`")
-        _log("  B) nob キット経由:")
-        _log(f"     1) git clone https://github.com/nobphotographr/x-audience-research-kit")
-        _log(f"     2) 生成した {cfg.path(RESEARCH_F).name} を kit にコピー")
-        _log("     3) kit で grok-search → hydrate → timelines → prepare-analysis")
-        _log("     4) config の nob_kit.path/data_dir を合わせて `python3 tmark.py run`")
-        _log("\n（動作確認だけしたい場合は --allow-sample を付けて実行してください）")
+        _log("  A) Grok抽出: config collection.provider=\"grok\" ＋ XAI_API_KEY → `python3 tmark.py run`")
+        _log("  B) X API: config collection.provider=\"xapi\" ＋ X_BEARER_TOKEN → `python3 tmark.py run`")
+        _log("  C) 動作確認: `--allow-sample` でサンプルデータを使う")
         return 0
     for fn in (cmd_timeline, cmd_match, cmd_target, cmd_actions, cmd_report):
         rc = fn(cfg, args)
@@ -299,8 +324,10 @@ def main(argv=None) -> int:
         p.add_argument("--top-k", type=int, default=10, help="match: 層ごとの上位件数")
         p.add_argument("--no-own", action="store_true",
                        help="collect: 自アカウントのタイムライン収集をスキップ")
+        p.add_argument("--provider", choices=["grok", "xapi"], default=None,
+                       help="collect/run: 収集方式を上書き（grok=Grok抽出 / xapi=X API）")
         p.add_argument("--no-collect", action="store_true",
-                       help="run: X API 自動収集を使わず nob キット取り込みにする")
+                       help="run: 自動収集せず nob キット/サンプル取り込みにする")
         p.add_argument("--no-generate", action="store_true",
                        help="target: LLMによるツイート生成/アクション生成をスキップ")
         p.add_argument("--allow-sample", action="store_true",
