@@ -8,6 +8,7 @@
 
 使い方:
   python3 tmark.py doctor    --config config.json
+  python3 tmark.py cost      --config config.json     # 収集費用を円で見積もり（実行前チェック）
   python3 tmark.py values    --config config.json
   python3 tmark.py audience  --config config.json     # research.generated.json も出力
   python3 tmark.py collect   --config config.json     # X API で自動収集（要 X_BEARER_TOKEN）
@@ -34,6 +35,10 @@ from tsuihai_marketer.actions import predict_actions  # noqa: E402
 from tsuihai_marketer.audience import (  # noqa: E402
     build_audience, generate_nob_research_config,
 )
+from tsuihai_marketer.budget import (  # noqa: E402
+    Budget, estimate_run, load_ledger, month_spent_jpy,
+    record_spend, remaining_run_cap_jpy,
+)
 from tsuihai_marketer.collect import run_collection  # noqa: E402
 from tsuihai_marketer.config import (  # noqa: E402
     Config, load_config, read_json, write_json,
@@ -58,6 +63,11 @@ MATCHES_F = "matches.json"
 TARGETS_F = "targets.json"
 ACTIONS_F = "actions.json"
 REPORT_F = "analysis.md"
+LEDGER_F = "spend_ledger.json"
+
+
+def _yen(n) -> str:
+    return f"¥{n:,.0f}"
 
 
 def _client(cfg: Config) -> LLMClient:
@@ -99,6 +109,17 @@ def cmd_doctor(cfg: Config, args) -> int:
     else:
         print("    → 収集モード: nob キット取り込み (`ingest`)。自動収集するなら X API を課金し "
               "X_BEARER_TOKEN を設定してください")
+
+    # 予算
+    budget = Budget.from_config(cfg.raw)
+    print(f"  予算: 為替 {budget.usd_jpy:.0f}円/USD  "
+          f"1回上限 {_yen(budget.per_run_limit_jpy) if budget.per_run_limit_jpy else '未設定'}  "
+          f"月上限 {_yen(budget.monthly_limit_jpy) if budget.monthly_limit_jpy else '未設定'}"
+          f"  enforce={budget.enforce}")
+    if budget.monthly_limit_jpy:
+        spent = month_spent_jpy(load_ledger(cfg.path(LEDGER_F)))
+        print(f"    今月使用済: {_yen(spent)} / 残り {_yen(max(0, budget.monthly_limit_jpy - spent))}")
+    print("    → 実行前の見積りは `python3 tmark.py cost` で確認できます")
     return 0
 
 
@@ -126,8 +147,45 @@ def cmd_audience(cfg: Config, args) -> int:
     return 0
 
 
+def _posts_per_user(cfg: Config) -> int:
+    return int(cfg.raw.get("collection", {}).get("posts_per_user")
+               or cfg.raw.get("nob_kit", {}).get("posts_per_user", 20))
+
+
+def cmd_cost(cfg: Config, args) -> int:
+    """収集にかかる費用を円で見積もる（実行前チェック）。"""
+    budget = Budget.from_config(cfg.raw)
+    sample_size = args.sample_size or cfg.sample_size
+    ppu = args.posts_per_user or _posts_per_user(cfg)
+    n_segments = 4
+    if cfg.path(AUDIENCE_F).exists():
+        n_segments = len(read_json(cfg.path(AUDIENCE_F)).get("segments", [])) or 4
+    est = estimate_run(budget, sample_size, ppu, n_segments)
+
+    print(f"■ 収集コスト見積り（X API 従量課金 / 為替 1USD={budget.usd_jpy:.0f}円）")
+    print(f"  設定: サンプル {sample_size}人 × 1人 {ppu}ツイート / {n_segments}層")
+    print(f"  読み取り: 投稿 {est['post_reads']:,}件 + ユーザー {est['user_reads']:,}件")
+    print(f"    内訳(投稿): 検索 {est['breakdown']['search_reads']:,} / "
+          f"TL {est['breakdown']['timeline_reads']:,} / 自TL {est['breakdown']['own_reads']:,}")
+    print(f"  概算費用: {_yen(est['jpy'])}  (≈ ${est['usd']:.2f}) / 1回")
+    # 上限との関係
+    if budget.per_run_limit_jpy:
+        ok = est["jpy"] <= budget.per_run_limit_jpy
+        print(f"  1回の上限 {_yen(budget.per_run_limit_jpy)}: "
+              f"{'収まります ✓' if ok else '超過 → 収集は上限で自動停止します ⚠'}")
+    if budget.monthly_limit_jpy:
+        ledger = load_ledger(cfg.path(LEDGER_F))
+        spent = month_spent_jpy(ledger)
+        print(f"  今月の上限 {_yen(budget.monthly_limit_jpy)}: 使用済 {_yen(spent)} / "
+              f"残り {_yen(max(0, budget.monthly_limit_jpy - spent))}")
+    if not budget.per_run_limit_jpy and not budget.monthly_limit_jpy:
+        print("  （上限未設定。config の budget.per_run_limit_jpy / monthly_limit_jpy で設定できます）")
+    print("  ※単価・為替は変動します。config の budget を公式ポータルの実額に合わせてください。")
+    return 0
+
+
 def cmd_collect(cfg: Config, args) -> int:
-    """X API から直接ツイートを自動収集（オーディエンス＋自TL）。"""
+    """X API から直接ツイートを自動収集（オーディエンス＋自TL）。予算上限を尊重。"""
     x = XClient(verbose=True)
     if not x.available:
         _log("エラー: X_BEARER_TOKEN が未設定です。X API を課金して環境変数に設定してください。")
@@ -140,12 +198,46 @@ def cmd_collect(cfg: Config, args) -> int:
         if rc:
             return rc
     audience = read_json(audience_path)
-    posts_per_user = int(cfg.raw.get("nob_kit", {}).get("posts_per_user")
-                         or cfg.raw.get("collection", {}).get("posts_per_user", 20))
+    posts_per_user = _posts_per_user(cfg)
     collect_own = not args.no_own
-    stats = run_collection(cfg, audience, x, posts_per_user, collect_own, _log)
+
+    # ---- 予算チェック ----
+    budget = Budget.from_config(cfg.raw)
+    ledger = load_ledger(cfg.path(LEDGER_F))
+    n_segments = len(audience.get("segments", [])) or 4
+    est = estimate_run(budget, cfg.sample_size, posts_per_user, n_segments)
+    _log(f"予算: 見積り {_yen(est['jpy'])}/回 (為替 {budget.usd_jpy:.0f}円/USD)")
+
+    # 月上限を既に超えていたら中止
+    if budget.monthly_limit_jpy is not None:
+        spent = month_spent_jpy(ledger)
+        if spent >= budget.monthly_limit_jpy:
+            _log(f"■ 中止: 今月の上限 {_yen(budget.monthly_limit_jpy)} に到達済み（使用済 {_yen(spent)}）。")
+            return 1
+
+    cap_jpy = remaining_run_cap_jpy(budget, ledger) if budget.enforce else None
+    if cap_jpy is not None:
+        _log(f"予算上限: 実費が {_yen(cap_jpy)} を超えたら自動停止します（ユーザー読み取り費用も込み）。")
+        if cap_jpy <= 0:
+            _log("■ 中止: 予算残がありません。config の budget 上限を見直してください。")
+            return 1
+
+    stats = run_collection(cfg, audience, x, posts_per_user, collect_own, _log,
+                           budget=budget, cap_jpy=cap_jpy)
+
+    # ---- 実費を記録 ----
+    spent_jpy = budget.reads_cost_jpy(x.post_reads, x.user_reads)
+    record_spend(cfg.path(LEDGER_F), x.post_reads, x.user_reads, spent_jpy,
+                 note=f"collect sample={cfg.sample_size} ppu={posts_per_user}")
+    ledger2 = load_ledger(cfg.path(LEDGER_F))
     _log(f"=== 収集完了: audience {stats['audience_posts']}ツイート / "
          f"{stats['sampled_users']}ユーザー / 自TL {stats['own_posts']}ツイート ===")
+    _log(f"■ 実費: 投稿{x.post_reads:,}件+ユーザー{x.user_reads:,}件 = "
+         f"{_yen(spent_jpy)} (≈${budget.reads_cost_usd(x.post_reads, x.user_reads):.2f})")
+    if budget.monthly_limit_jpy:
+        _log(f"■ 今月累計: {_yen(month_spent_jpy(ledger2))} / 上限 {_yen(budget.monthly_limit_jpy)}")
+    if stats.get("budget_stopped"):
+        _log("■ 注意: 予算上限のため一部ユーザーの収集を省略しました（サンプル数が目標未満）。")
     return 0
 
 
@@ -288,10 +380,10 @@ def main(argv=None) -> int:
     sub = parser.add_subparsers(dest="command", required=True)
 
     cmds = {
-        "doctor": cmd_doctor, "values": cmd_values, "audience": cmd_audience,
-        "collect": cmd_collect, "ingest": cmd_ingest, "timeline": cmd_timeline,
-        "match": cmd_match, "target": cmd_target, "actions": cmd_actions,
-        "report": cmd_report, "run": cmd_run,
+        "doctor": cmd_doctor, "cost": cmd_cost, "values": cmd_values,
+        "audience": cmd_audience, "collect": cmd_collect, "ingest": cmd_ingest,
+        "timeline": cmd_timeline, "match": cmd_match, "target": cmd_target,
+        "actions": cmd_actions, "report": cmd_report, "run": cmd_run,
     }
     for name in cmds:
         p = sub.add_parser(name)
@@ -305,6 +397,10 @@ def main(argv=None) -> int:
                        help="target: LLMによるツイート生成/アクション生成をスキップ")
         p.add_argument("--allow-sample", action="store_true",
                        help="ingest: nob データが無い時 examples のサンプルを使う")
+        p.add_argument("--sample-size", type=int, default=None,
+                       help="cost: 見積りに使うサンプル人数を上書き")
+        p.add_argument("--posts-per-user", type=int, default=None,
+                       help="cost: 見積りに使う1人あたり件数を上書き")
 
     args = parser.parse_args(argv)
     try:

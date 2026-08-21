@@ -41,6 +41,9 @@ class XClient:
         self.timeout = timeout
         self.max_wait = max_wait          # 429 で待つ最大秒数
         self.verbose = verbose
+        # 従量課金の実測カウンタ（予算管理に使用）
+        self.post_reads = 0
+        self.user_reads = 0
 
     @property
     def available(self) -> bool:
@@ -135,11 +138,16 @@ class XClient:
             if token:
                 p["next_token"] = token
             data = self._get("/tweets/search/recent", p)
-            all_tweets.extend(data.get("data") or [])
-            for u in (data.get("includes") or {}).get("users") or []:
+            rows = data.get("data") or []
+            all_tweets.extend(rows)
+            self.post_reads += len(rows)               # 従量課金カウント
+            new_users = (data.get("includes") or {}).get("users") or []
+            for u in new_users:
+                if u["id"] not in users:
+                    self.user_reads += 1
                 users[u["id"]] = u
             token = (data.get("meta") or {}).get("next_token")
-            if not token or not data.get("data"):
+            if not token or not rows:
                 break
         return {"tweets": all_tweets, "users": users}
 
@@ -151,6 +159,7 @@ class XClient:
         except XAPIError as e:
             self._log(f"ユーザー取得失敗 @{username}: {e}")
             return None
+        self.user_reads += 1
         return data.get("data")
 
     def get_user_timeline(self, user_id: str, *, max_results: int = 20,
@@ -159,5 +168,7 @@ class XClient:
             "tweet.fields": TWEET_FIELDS,
             "exclude": "retweets" + (",replies" if exclude_replies else ""),
         }
-        return self._paginate(f"/users/{user_id}/tweets", params,
+        rows = self._paginate(f"/users/{user_id}/tweets", params,
                               max_items=max_results, page_size=min(100, max_results))
+        self.post_reads += len(rows)                    # 従量課金カウント
+        return rows

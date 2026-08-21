@@ -153,10 +153,41 @@ python3 tmark.py run --config config.json --no-collect  # nob キット出力を
     "timeline_file": "data/own_timeline.jsonl"   // 自分のツイ廃垢のツイート(JSONL)
   },
   "audience": { "sample_size": 100, "language": "ja" },
+  "collection": { "posts_per_user": 15 },
+  "budget": {                       // ★円建て予算・上限
+    "currency": "JPY", "usd_jpy": 155,
+    "per_run_limit_jpy": 2500,      // 1回の実行あたり上限（超えたら自動停止）
+    "monthly_limit_jpy": 10000,     // 月あたり上限（到達で中止）
+    "enforce": true,
+    "prices_usd": { "post_read": 0.005, "user_read": 0.010 }  // X API従量課金の単価
+  },
   "llm": { "provider": "grok", "model": "grok-3-latest" },  // "anthropic" | "none"
   "nob_kit": { "path": "../x-audience-research-kit", "data_dir": "data/processed" }
 }
 ```
+
+---
+
+## 💴 予算（円建て・上限つき）
+
+X API は 2026 年に**従量課金が既定**になりました（新規は定額 Basic/Pro 不可）。読み取り課金が実費になるため、
+本ツールは**円で見積もり、設定した上限で自動的に収集を止めます**（実費が予算を超えません）。
+
+```bash
+# 実行前に「1回いくら」を円で確認（--sample-size / --posts-per-user で試算も）
+python3 tmark.py cost --config config.json
+python3 tmark.py cost --config config.json --sample-size 20 --posts-per-user 10
+```
+
+- **上限の効き方**: `collect`/`run` は実行中の実費（**ユーザー読み取り費用も込み**）を監視し、
+  `per_run_limit_jpy`（1回）と `monthly_limit_jpy`（月）の小さい方を超える前にユーザー取得を止めます。
+  検索サイズも残予算に合わせて縮小するので、**設定した円を超えません**。
+- **月次台帳**: 実費は `data/spend_ledger.json` に月ごとに累積。月上限に達すると次回以降は中止します。
+- **単価・為替は変動**します。`budget.prices_usd` と `usd_jpy` を[公式ポータル](https://developer.x.com)の実額に合わせてください。
+- お試しは `--sample-size 20 --posts-per-user 10`（≈¥900/回）で精度を見てから本番（100人）へ。
+
+> 目安（為替155円）: **20人×10 ≈ ¥900 / 100人×15 ≈ ¥2,700 / 1回**。読み取りのみで投稿はしないため、
+> 投稿課金（リンク投稿 $0.20 等）は一切かかりません。
 
 ---
 
@@ -178,7 +209,7 @@ python3 tmark.py run --config config.json --no-collect  # nob キット出力を
 
 ```
 tsuihai-marketer/
-├── tmark.py                     # CLI（doctor/values/audience/collect/ingest/timeline/match/actions/report/run）
+├── tmark.py                     # CLI（doctor/cost/values/audience/collect/ingest/timeline/match/target/actions/report/run）
 ├── config.example.json          # 設定テンプレ
 ├── config.demo.json             # サンプルデータで動くデモ設定
 ├── .env.example
@@ -186,7 +217,8 @@ tsuihai-marketer/
 │   ├── llm.py                   # Grok/Claude ラッパー（urllib のみ）
 │   ├── textutil.py              # 日本語対応 TF-IDF / コサイン類似度
 │   ├── config.py                # 設定 & I/O
-│   ├── xclient.py               # ③X API v2 クライアント（Bearer / urllib のみ）
+│   ├── budget.py                # 💴円建て予算・見積り・上限・月次台帳
+│   ├── xclient.py               # ③X API v2 クライアント（Bearer / urllib のみ・読み取り数を計測）
 │   ├── collect.py               # ③自動収集（サンプリング＋TL取得＋自TL取得）
 │   ├── ingest.py                # nobキット出力の正規化
 │   ├── value_extraction.py      # ①価値抽出
