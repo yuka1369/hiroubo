@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="theme-color" content="#ff77aa">
+</head>
+<body>
+<title>目指せ！爆美女！</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<style>
+:root{
+  --pink:#ff77aa;
+  --pink-deep:#ff3d84;
+  --purple:#a874ff;
+  --cream:#fff6fb;
+  --ink:#5a3a52;
+  --ink-soft:#9a7a92;
+  --card:#ffffff;
+  --shadow:0 8px 24px rgba(255,90,150,.18);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  font-family:"Hiragino Maru Gothic ProN","Hiragino Sans","Yu Gothic",system-ui,sans-serif;
+  color:var(--ink);
+  background:linear-gradient(160deg,#ffd9ec 0%,#ffe9f4 40%,#f0e4ff 100%);
+  min-height:100dvh;
+  overscroll-behavior:none;
+}
+.screen{
+  max-width:480px;margin:0 auto;padding:16px 16px 40px;
+  min-height:100dvh;
+}
+.screen[hidden]{display:none}
+b{font-weight:800}
+
+/* ---------- ボタン ---------- */
+.btn{
+  border:none;border-radius:999px;padding:12px 20px;font-size:16px;font-weight:800;
+  font-family:inherit;cursor:pointer;transition:transform .08s, box-shadow .15s;
+}
+.btn:active{transform:scale(.95)}
+.btn-primary{background:linear-gradient(135deg,var(--pink),var(--pink-deep));color:#fff;box-shadow:var(--shadow)}
+.btn-ghost{background:rgba(255,255,255,.7);color:var(--ink);border:2px solid #ffc7de}
+.btn-lg{width:100%;padding:16px;font-size:18px;margin-top:8px}
+.btn-sleep{background:linear-gradient(135deg,#b79bff,#8b6bff);color:#fff;padding:10px 14px;font-size:14px;box-shadow:0 6px 16px rgba(140,100,255,.3)}
+
+/* ---------- タイトル ---------- */
+.title-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:6px}
+.title-sparkle{font-size:22px;letter-spacing:6px;color:var(--purple);opacity:.7}
+.title-logo{font-size:34px;line-height:1.15;margin:4px 0;color:var(--pink-deep);text-shadow:2px 2px 0 #fff, 4px 4px 0 rgba(255,120,170,.25)}
+.title-logo .big{font-size:58px;display:inline-block;background:linear-gradient(135deg,#ff5aa0,#ff2d6f,#a15bff);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;text-shadow:none;filter:drop-shadow(2px 3px 0 #fff)}
+.title-sub{color:var(--ink-soft);font-weight:700;margin:0 0 4px}
+.title-hero{width:190px;height:190px;margin:6px 0}
+.title-hero svg,.intro-hero svg{width:100%;height:100%;filter:drop-shadow(0 10px 20px rgba(255,90,150,.3))}
+.title-note{font-size:11px;color:var(--ink-soft);opacity:.8;margin-top:14px}
+
+/* ---------- 名前入力 ---------- */
+.intro-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:10px}
+.intro-title{color:var(--pink-deep);margin:0}
+.intro-hero{width:150px;height:150px}
+.intro-label{font-weight:800;color:var(--ink-soft);margin-top:6px}
+.name-input{
+  width:100%;max-width:280px;padding:14px 18px;border-radius:16px;border:2px solid #ffc7de;
+  font-size:20px;text-align:center;font-family:inherit;font-weight:800;color:var(--ink);background:#fff;
+}
+.name-input:focus{outline:none;border-color:var(--pink)}
+
+/* ---------- 目標選択 ---------- */
+.goal-screen{display:flex;flex-direction:column;padding-top:24px}
+.goal-lead{color:var(--ink-soft);font-weight:700;font-size:13px;text-align:center;margin:2px 0 14px;line-height:1.6}
+.goal-list{display:flex;flex-direction:column;gap:12px}
+.goal-card{display:flex;gap:12px;align-items:center;background:#fff;border-radius:18px;padding:14px;box-shadow:var(--shadow);border:3px solid transparent;cursor:pointer;text-align:left;transition:transform .08s,border-color .15s}
+.goal-card:active{transform:scale(.97)}
+.goal-card:hover{border-color:#ffc7de}
+.goal-emoji{font-size:38px;line-height:1;flex:0 0 auto}
+.goal-body{flex:1;min-width:0;display:flex;flex-direction:column}
+.goal-name{display:block;font-weight:900;font-size:16px;color:var(--pink-deep)}
+.goal-desc{display:block;font-size:12px;font-weight:600;color:var(--ink-soft);line-height:1.5;margin-top:2px}
+.goal-focus{display:block;font-size:11px;font-weight:800;color:var(--purple);margin-top:5px}
+.rank-goal{display:inline-block;font-size:11px;font-weight:800;color:var(--purple);background:#f3ecff;padding:2px 8px;border-radius:8px;margin:2px 0}
+.rank-goal:empty{display:none}
+
+/* ---------- HUD ---------- */
+.hud{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.hud-day{display:flex;align-items:baseline;gap:4px;background:#fff;padding:6px 14px;border-radius:14px;box-shadow:var(--shadow)}
+.hud-day-label{font-size:11px;font-weight:800;color:var(--pink);letter-spacing:1px}
+.hud-day-num{font-size:24px;font-weight:900;color:var(--pink-deep)}
+.hud-day-max{font-size:12px;color:var(--ink-soft);font-weight:700}
+.hud-right{display:flex;gap:6px}
+.hud-chip{background:#fff;padding:6px 10px;border-radius:12px;font-size:13px;font-weight:700;box-shadow:var(--shadow)}
+
+/* ---------- ランクバナー ---------- */
+.rank-banner{display:flex;gap:12px;align-items:center;background:#fff;border-radius:20px;padding:12px;box-shadow:var(--shadow);margin-bottom:12px}
+.rank-avatar{width:76px;height:76px;flex:0 0 auto;border-radius:50%;background:linear-gradient(135deg,#ffe3f0,#f1e2ff);overflow:hidden}
+.rank-avatar svg{width:100%;height:100%}
+.rank-info{flex:1;min-width:0}
+.rank-name{font-weight:900;font-size:17px}
+.rank-title{font-size:14px;font-weight:800;color:var(--pink-deep);margin:1px 0 6px}
+.charm-row{display:flex;align-items:center;gap:6px}
+.charm-label{font-size:11px;font-weight:800;color:var(--purple)}
+.charm-bar{flex:1;height:12px;background:#f2e6f4;border-radius:8px;overflow:hidden}
+.charm-bar i{display:block;height:100%;width:0;border-radius:8px;background:linear-gradient(90deg,#ff9ec6,#ff2d6f,#a15bff);transition:width .5s}
+.charm-val{font-size:13px;font-weight:900;color:var(--pink-deep);min-width:26px;text-align:right}
+
+/* ---------- ステータス ---------- */
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.stat{background:#fff;border-radius:14px;padding:8px 10px;box-shadow:0 4px 12px rgba(255,90,150,.1)}
+.stat-top{display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:800;margin-bottom:4px}
+.stat-name{color:var(--ink)}
+.stat-num{color:var(--ink-soft)}
+.stat-bar{height:8px;background:#f2e6f4;border-radius:6px;overflow:hidden}
+.stat-bar i{display:block;height:100%;width:0;border-radius:6px;transition:width .4s}
+.stat.pop{animation:pop .4s}
+@keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.06)}100%{transform:scale(1)}}
+
+/* ---------- 行動力 ---------- */
+.ap-row{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.ap-label{font-size:12px;font-weight:800;color:var(--ink-soft)}
+.ap-dots{display:flex;gap:4px;flex:1}
+.ap-dot{width:16px;height:16px;border-radius:50%;background:#ffd0e4;box-shadow:inset 0 0 0 2px #ffb3d3}
+.ap-dot.on{background:radial-gradient(circle at 35% 30%,#fff,#ff5aa0);box-shadow:0 2px 6px rgba(255,90,150,.5)}
+
+/* ---------- 行動カード ---------- */
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.action{
+  background:#fff;border-radius:16px;padding:12px 10px;text-align:center;cursor:pointer;
+  box-shadow:0 4px 14px rgba(255,90,150,.12);border:2px solid transparent;transition:transform .08s,border-color .15s;
+  position:relative;
+}
+.action:active{transform:scale(.96)}
+.action.disabled{opacity:.45;pointer-events:none;filter:grayscale(.4)}
+.action-emoji{font-size:30px;line-height:1}
+.action-name{font-weight:900;font-size:14px;margin-top:4px}
+.action-tag{font-size:10px;font-weight:800;color:var(--ink-soft);margin-top:2px}
+.action-cost{position:absolute;top:6px;right:8px;font-size:10px;font-weight:800;color:var(--pink-deep)}
+
+/* ---------- ログ ---------- */
+.log-panel{background:rgba(255,255,255,.75);border-radius:16px;padding:12px;margin-bottom:16px}
+.log-title{font-weight:900;font-size:13px;color:var(--pink-deep);margin-bottom:6px}
+.log{display:flex;flex-direction:column;gap:5px;max-height:150px;overflow-y:auto;font-size:13px;line-height:1.5}
+.log-item{padding:6px 10px;background:#fff;border-radius:10px;font-weight:600}
+.log-item.good{color:#c81f6b}
+.log-item.bad{color:#8a6fb0}
+.log-item.story{background:linear-gradient(135deg,#fff3f9,#f3ecff);font-weight:800}
+
+.btn-reset{width:100%;font-size:13px;padding:10px;opacity:.85}
+
+/* ---------- オーバーレイ共通 ---------- */
+.overlay{position:fixed;inset:0;background:rgba(90,40,80,.45);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:20px;z-index:20;animation:fade .2s}
+.overlay[hidden]{display:none}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+
+/* 確認カード */
+.confirm-card{background:#fff;border-radius:24px;padding:24px;width:100%;max-width:340px;text-align:center;box-shadow:var(--shadow);animation:pop .25s}
+.confirm-emoji{font-size:52px}
+.confirm-name{font-size:20px;font-weight:900;margin-top:4px;color:var(--pink-deep)}
+.confirm-desc{color:var(--ink-soft);font-weight:700;font-size:14px;margin:6px 0}
+.confirm-cost{font-size:13px;font-weight:800;color:var(--purple);margin-bottom:14px}
+.confirm-btns{display:flex;gap:10px}
+.confirm-btns .btn{flex:1}
+
+/* 会話 */
+.dialogue{flex-direction:column;justify-content:flex-end;padding:0}
+.dlg-stage{flex:1;display:flex;align-items:flex-end;justify-content:center;width:100%;overflow:hidden;padding-bottom:6px}
+.dlg-avatar{width:210px;height:210px;animation:rise .35s ease-out}
+.dlg-avatar svg{width:100%;height:100%;filter:drop-shadow(0 8px 18px rgba(120,40,90,.4))}
+@keyframes rise{from{transform:translateY(30px);opacity:0}to{transform:translateY(0);opacity:1}}
+.dlg-box{background:#fff;border-radius:24px 24px 0 0;padding:18px 20px 30px;width:100%;max-width:480px;box-shadow:0 -6px 24px rgba(120,40,90,.3);min-height:150px;cursor:pointer}
+.dlg-name{font-weight:900;font-size:16px;color:var(--pink-deep);margin-bottom:6px}
+.dlg-name:empty{display:none}
+.dlg-text{font-size:16px;line-height:1.65;font-weight:600;min-height:52px}
+.dlg-choices{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.dlg-choice{background:linear-gradient(135deg,#fff0f7,#f3ecff);border:2px solid #ffc7de;border-radius:14px;padding:12px;font-weight:800;font-family:inherit;font-size:15px;color:var(--ink);cursor:pointer}
+.dlg-choice:active{transform:scale(.97)}
+.dlg-tap{text-align:right;font-size:12px;font-weight:800;color:var(--pink);margin-top:10px;animation:blink 1.2s infinite}
+@keyframes blink{0%,100%{opacity:.4}50%{opacity:1}}
+
+/* エンディング */
+.ending-card{background:#fff;border-radius:28px;padding:26px 22px;width:100%;max-width:360px;text-align:center;box-shadow:var(--shadow);animation:pop .35s}
+.ending-burst{color:var(--purple);letter-spacing:4px;font-size:18px}
+.ending-avatar{width:150px;height:150px;margin:6px auto}
+.ending-avatar svg{width:100%;height:100%;filter:drop-shadow(0 10px 20px rgba(255,90,150,.35))}
+.ending-rank{font-size:26px;font-weight:900;background:linear-gradient(135deg,#ff5aa0,#a15bff);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;margin:4px 0}
+.ending-name{font-weight:800;color:var(--ink-soft);margin-bottom:10px}
+.ending-stats{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:12px}
+.ending-stat{font-size:11px;font-weight:800;background:#fff0f7;color:var(--pink-deep);padding:4px 8px;border-radius:8px}
+.ending-msg{font-size:14px;font-weight:700;line-height:1.6;color:var(--ink);margin-bottom:16px;white-space:pre-line}
+</style>
+
+
+<!-- ===== タイトル画面 ===== -->
+<section id="title" class="screen title-screen">
+  <div class="title-sparkle">✧ ˖ °</div>
+  <h1 class="title-logo">目指せ！<br><span class="big">爆美女</span>！</h1>
+  <p class="title-sub">30日間の自分みがき育成ストーリー</p>
+  <div class="title-hero" id="titleHero"></div>
+  <button class="btn btn-primary btn-lg" id="startBtn">▶ はじめる</button>
+  <button class="btn btn-ghost" id="continueBtn" hidden>つづきから</button>
+  <p class="title-note">※ 登場する女の子はすべて架空のオリジナルキャラです</p>
+</section>
+
+<!-- ===== 名前入力 ===== -->
+<section id="intro" class="screen intro-screen" hidden>
+  <h2 class="intro-title">あなたのプロフィール</h2>
+  <div class="intro-hero" id="introHero"></div>
+  <label class="intro-label">なまえ</label>
+  <input id="nameInput" class="name-input" type="text" maxlength="8" placeholder="なまえを入力" value="ミライ">
+  <button class="btn btn-primary btn-lg" id="introGoBtn">つぎへ 💄</button>
+</section>
+
+<!-- ===== 目標（なりたい爆美女）選択 ===== -->
+<section id="goal" class="screen goal-screen" hidden>
+  <h2 class="intro-title">どんな爆美女を目指す？</h2>
+  <p class="goal-lead">なりたい雰囲気を選んでね。得意ステータスが少し伸びた状態でスタートするよ。</p>
+  <div class="goal-list" id="goalList"></div>
+</section>
+
+<!-- ===== メインゲーム ===== -->
+<section id="game" class="screen game-screen" hidden>
+
+  <header class="hud">
+    <div class="hud-day">
+      <span class="hud-day-label">DAY</span>
+      <span class="hud-day-num" id="hudDay">1</span>
+      <span class="hud-day-max">/ 30</span>
+    </div>
+    <div class="hud-right">
+      <div class="hud-chip" title="コイン">💰 <b id="hudMoney">0</b></div>
+      <div class="hud-chip" title="フォロワー">👥 <b id="hudFollowers">0</b></div>
+    </div>
+  </header>
+
+  <div class="rank-banner" id="rankBanner">
+    <div class="rank-avatar" id="playerAvatar"></div>
+    <div class="rank-info">
+      <div class="rank-name" id="playerName">ミライ</div>
+      <div class="rank-goal" id="goalChip"></div>
+      <div class="rank-title" id="rankTitle">🐣 これからのあなた</div>
+      <div class="charm-row">
+        <span class="charm-label">魅力</span>
+        <div class="charm-bar"><i id="charmFill"></i></div>
+        <span class="charm-val" id="charmVal">0</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="ap-row">
+    <span class="ap-label">今日の行動力</span>
+    <span class="ap-dots" id="apDots"></span>
+    <button class="btn btn-sleep" id="sleepBtn">😴 おやすみ（次の日へ）</button>
+  </div>
+
+  <div class="actions" id="actions"></div>
+
+  <div class="log-panel">
+    <div class="log-title">📖 できごと</div>
+    <div class="log" id="log"></div>
+  </div>
+
+  <button class="btn btn-ghost btn-reset" id="resetBtn">最初からやり直す</button>
+</section>
+
+<!-- ===== 行動確認モーダル ===== -->
+<div id="confirm" class="overlay" hidden>
+  <div class="confirm-card">
+    <div class="confirm-emoji" id="confirmEmoji">✨</div>
+    <div class="confirm-name" id="confirmName"></div>
+    <div class="confirm-desc" id="confirmDesc"></div>
+    <div class="confirm-cost" id="confirmCost"></div>
+    <div class="confirm-btns">
+      <button class="btn btn-ghost" id="confirmNo">やめる</button>
+      <button class="btn btn-primary" id="confirmYes">やる！</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 会話（ストーリー）モーダル ===== -->
+<div id="dialogue" class="overlay dialogue" hidden>
+  <div class="dlg-stage">
+    <div class="dlg-avatar" id="dlgAvatar"></div>
+  </div>
+  <div class="dlg-box" id="dlgBox">
+    <div class="dlg-name" id="dlgName"></div>
+    <div class="dlg-text" id="dlgText"></div>
+    <div class="dlg-choices" id="dlgChoices"></div>
+    <div class="dlg-tap" id="dlgTap">タップで進む ▸</div>
+  </div>
+</div>
+
+<!-- ===== エンディング ===== -->
+<div id="ending" class="overlay ending" hidden>
+  <div class="ending-card">
+    <div class="ending-burst">✦ ˖ ✧ ˖ ✦</div>
+    <div class="ending-avatar" id="endingAvatar"></div>
+    <div class="ending-rank" id="endingRank"></div>
+    <div class="ending-name" id="endingName"></div>
+    <div class="ending-stats" id="endingStats"></div>
+    <div class="ending-msg" id="endingMsg"></div>
+    <button class="btn btn-primary btn-lg" id="endingAgain">もう一度あそぶ 🔁</button>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   目指せ！爆美女！  — 30日間 自分みがき育成ゲーム
+   ※ 登場キャラはすべて架空のオリジナルです
+   ========================================================= */
+'use strict';
+
+const MAX_DAY = 30;
+const AP_PER_DAY = 3;
+const SAVE_KEY = 'bakubijo_save_v1';
+const $ = (id) => document.getElementById(id);
+const rnd = (a, b) => Math.floor(Math.random() * (b - a + 1)) + a;
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+/* ---------- ステータス定義 ---------- */
+const STATS = [
+  { key: 'bihada',  name: '美肌',       color: '#ff8fb1' },
+  { key: 'style',   name: 'スタイル',   color: '#8fd3ff' },
+  { key: 'fashion', name: 'ファッション', color: '#c79cff' },
+  { key: 'chisei',  name: '知性',       color: '#8fe0c0' },
+  { key: 'mental',  name: 'メンタル',   color: '#ffd27f' },
+];
+
+/* =========================================================
+   アバター（SVGで描くオリジナルの女の子）
+   ========================================================= */
+function shade(hex, amt = -26) {
+  const n = parseInt(hex.slice(1), 16);
+  const r = clamp((n >> 16) + amt, 0, 255);
+  const g = clamp(((n >> 8) & 255) + amt, 0, 255);
+  const b = clamp((n & 255) + amt, 0, 255);
+  return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+}
+
+function eyeSVG(cx, cy, color) {
+  return `
+    <ellipse cx="${cx}" cy="${cy}" rx="10" ry="13" fill="#fff"/>
+    <circle cx="${cx}" cy="${cy + 1}" r="9" fill="${color}"/>
+    <circle cx="${cx}" cy="${cy + 2}" r="5" fill="#2a1f28"/>
+    <circle cx="${cx - 3}" cy="${cy - 4}" r="3" fill="#fff"/>
+    <path d="M ${cx - 12} ${cy - 10} Q ${cx} ${cy - 18} ${cx + 12} ${cy - 10}"
+          stroke="#3a2a34" stroke-width="2.6" fill="none" stroke-linecap="round"/>`;
+}
+
+function sideHair(kind, shd) {
+  switch (kind) {
+    case 'twin':
+      return `<circle cx="38" cy="152" r="27" fill="${shd}"/><circle cx="162" cy="152" r="27" fill="${shd}"/>
+              <rect x="52" y="112" width="18" height="48" rx="9" fill="${shd}"/><rect x="130" y="112" width="18" height="48" rx="9" fill="${shd}"/>`;
+    case 'long':
+      return `<rect x="30" y="102" width="28" height="86" rx="14" fill="${shd}"/><rect x="142" y="102" width="28" height="86" rx="14" fill="${shd}"/>`;
+    case 'wave':
+      return `<circle cx="40" cy="138" r="21" fill="${shd}"/><circle cx="52" cy="166" r="17" fill="${shd}"/>
+              <circle cx="160" cy="138" r="21" fill="${shd}"/><circle cx="148" cy="166" r="17" fill="${shd}"/>`;
+    default: /* med */
+      return `<ellipse cx="48" cy="126" rx="15" ry="36" fill="${shd}"/><ellipse cx="152" cy="126" rx="15" ry="36" fill="${shd}"/>`;
+  }
+}
+
+const ACC = {
+  none: '',
+  star: `<path d="M150 40 l5 11 12 1 -9 8 3 12 -11 -6 -11 6 3 -12 -9 -8 12 -1 z" fill="#ffd54a" stroke="#ff9d00" stroke-width="1.5"/>`,
+  heart: `<path d="M54 58 c-7 -9 -20 -3 -15 8 c3 7 15 13 15 13 c0 0 12 -6 15 -13 c5 -11 -8 -17 -15 -8 z" fill="#ff6fa3"/>`,
+  bow: `<path d="M86 46 l14 10 14 -10 v20 l-14 -8 -14 8 z" fill="#ff6fa3"/><circle cx="100" cy="56" r="5" fill="#ff3d84"/>`,
+  crown: `<path d="M74 44 l8 14 18 -18 18 18 8 -14 v20 h-52 z" fill="#ffd54a" stroke="#ff9d00" stroke-width="1.5"/>
+          <circle cx="82" cy="44" r="3" fill="#ff5aa0"/><circle cx="100" cy="40" r="3" fill="#ff5aa0"/><circle cx="118" cy="44" r="3" fill="#ff5aa0"/>`,
+};
+
+function avatarSVG(o) {
+  const skin = o.skin || '#ffe1d2';
+  const hair = o.hair || '#6f5140';
+  const shd = o.hairShade || shade(hair);
+  const eye = o.eye || '#4a3a44';
+  const blush = o.blush || '#ffb1c8';
+  const acc = ACC[o.acc || 'none'] || '';
+  const bg = o.bg ? `<circle cx="100" cy="100" r="99" fill="${o.bg}"/>` : '';
+  return `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+    ${bg}
+    ${sideHair(o.side || 'med', shd)}
+    <ellipse cx="100" cy="120" rx="66" ry="72" fill="${shd}"/>
+    <ellipse cx="100" cy="106" rx="52" ry="56" fill="${skin}"/>
+    <ellipse cx="70" cy="118" rx="8" ry="7" fill="${blush}" opacity=".7"/>
+    <ellipse cx="130" cy="118" rx="8" ry="7" fill="${blush}" opacity=".7"/>
+    ${eyeSVG(78, 112, eye)}
+    ${eyeSVG(122, 112, eye)}
+    <path d="M94 126 Q100 132 106 126" stroke="#c86a86" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+    <path d="M44 98 C44 54 72 40 100 40 C128 40 156 54 156 98
+             C150 78 138 72 122 72 C118 88 108 86 100 72
+             C92 86 82 88 78 72 C62 72 50 78 44 98 Z" fill="${hair}"/>
+    ${acc}
+  </svg>`;
+}
+
+/* ---------- キャラクター ---------- */
+function charFace(key, playerAcc) {
+  switch (key) {
+    case 'you':
+      return avatarSVG({ hair: '#7a5642', eye: '#5a3f36', side: 'med', bg: '#fff2f8', acc: playerAcc || 'none' });
+    case 'mina':  // トップアイドル
+      return avatarSVG({ hair: '#ff9fce', hairShade: '#f57bb4', eye: '#d64f96', blush: '#ff9dbf', side: 'twin', bg: '#fff0f7', acc: 'star' });
+    case 'coco':  // 美容インフルエンサー
+      return avatarSVG({ hair: '#e0a75f', hairShade: '#c98a3e', eye: '#a6743c', blush: '#ffb0a0', side: 'wave', bg: '#fff6ec', acc: 'heart' });
+    case 'reina': // クールなライバル読者モデル
+      return avatarSVG({ hair: '#3d3448', hairShade: '#2b2434', eye: '#8a63c8', blush: '#e79bb0', side: 'long', bg: '#efeaff', acc: 'none' });
+    default:
+      return avatarSVG({});
+  }
+}
+const CHAR_NAME = { you: 'あなた', mina: 'MINA', coco: 'ここ', reina: 'レイナ', narr: '' };
+
+/* ---------- 目標（なりたい爆美女タイプ） ---------- */
+const GOALS = {
+  sexy: {
+    emoji: '💋', name: '大人セクシー系', focus: ['bihada', 'style', 'mental'],
+    desc: 'ミステリアスな色っぽさで、思わず目が離せなくなる大人の女性。',
+    end: '匂い立つような色気に、会場中がため息をもらした。',
+  },
+  natural: {
+    emoji: '🌿', name: 'ナチュラル自然体系', focus: ['style', 'chisei', 'mental'],
+    desc: '飾らないのに惹かれる。ボーイッシュさと女性らしさが同居する自然体。',
+    end: 'ボーイッシュさと女性らしさが溶け合った、あなただけの自然体が眩しかった。',
+  },
+  gorgeous: {
+    emoji: '👑', name: '華やかアイドル系', focus: ['fashion', 'bihada', 'mental'],
+    desc: 'キラキラ王道。ステージの真ん中がいちばん似合う華やかさ。',
+    end: 'スポットライトを味方につけた王道の華やかさに、大歓声が上がった。',
+  },
+  cool: {
+    emoji: '🖤', name: '知的クール系', focus: ['chisei', 'fashion', 'mental'],
+    desc: '凛としてかっこいい。知性とセンスでクールに魅せる。',
+    end: '凛とした知的な佇まいに、誰もが息をのんで見入っていた。',
+  },
+};
+
+/* =========================================================
+   ゲーム状態
+   ========================================================= */
+function defaultState() {
+  return {
+    name: 'ミライ',
+    goal: 'sexy',
+    day: 1,
+    ap: AP_PER_DAY,
+    money: 3000,
+    followers: 120,
+    stats: { bihada: 18, style: 18, fashion: 16, chisei: 18, mental: 24 },
+    log: [],
+    done: {},   // 発生済みイベントフラグ
+  };
+}
+let S = defaultState();
+
+function charm() {
+  const v = STATS.reduce((s, st) => s + S.stats[st.key], 0) / STATS.length;
+  return Math.round(v);
+}
+function goalScore() {
+  const g = GOALS[S.goal] || GOALS.sexy;
+  return Math.round(g.focus.reduce((s, k) => s + S.stats[k], 0) / g.focus.length);
+}
+function rankInfo(c = charm()) {
+  if (c >= 90) return { t: '👑 爆美女（伝説級）', acc: 'crown' };
+  if (c >= 78) return { t: '💎 正真正銘の美女', acc: 'star' };
+  if (c >= 64) return { t: '🌸 かわいい系美女', acc: 'bow' };
+  if (c >= 48) return { t: '🌱 みがけば光る原石', acc: 'heart' };
+  if (c >= 30) return { t: '🐣 これからのあなた', acc: 'none' };
+  return { t: '🌰 スタート地点', acc: 'none' };
+}
+
+function save() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) {} }
+function hasSave() { try { return !!localStorage.getItem(SAVE_KEY); } catch (e) { return false; } }
+function load() { try { S = JSON.parse(localStorage.getItem(SAVE_KEY)) || defaultState(); } catch (e) { S = defaultState(); } }
+function wipe() { try { localStorage.removeItem(SAVE_KEY); } catch (e) {} }
+
+/* ---------- ログ ---------- */
+function logMsg(text, tone = '') {
+  S.log.unshift({ text, tone });
+  if (S.log.length > 30) S.log.pop();
+}
+
+/* ---------- 効果を反映 ---------- */
+function grant(effect, msg, tone) {
+  if (effect.stats) for (const k in effect.stats) S.stats[k] = clamp(S.stats[k] + effect.stats[k], 0, 100);
+  if (effect.money) S.money = Math.max(0, S.money + effect.money);
+  if (effect.followers) S.followers = Math.max(0, S.followers + effect.followers);
+  if (msg) logMsg(msg, tone || 'good');
+}
+
+/* =========================================================
+   行動（アクション）
+   ========================================================= */
+const ACTIONS = [
+  { id: 'skincare', name: 'スキンケア', emoji: '🧴', tag: '美肌↑', ap: 1, cost: 0,
+    run: () => ({ stats: { bihada: rnd(4, 7), mental: 1 }, msg: 'ていねいにスキンケア。お肌つるつる✨' }) },
+  { id: 'gym', name: '運動・ジム', emoji: '🏃‍♀️', tag: 'スタイル↑', ap: 1, cost: 0,
+    run: () => ({ stats: { style: rnd(4, 7), mental: 1 }, msg: '汗を流してスッキリ！引き締まってきた💪' }) },
+  { id: 'fashion', name: 'ファッション研究', emoji: '👗', tag: 'ファッション↑', ap: 1, cost: 300,
+    run: () => ({ stats: { fashion: rnd(4, 7) }, money: -300, msg: '雑誌とショップでトレンドを研究👗' }) },
+  { id: 'study', name: '勉強・読書', emoji: '📚', tag: '知性↑', ap: 1, cost: 0,
+    run: () => ({ stats: { chisei: rnd(4, 7) }, msg: '本を読んで内面みがき📚 教養は裏切らない' }) },
+  { id: 'care', name: 'セルフケア', emoji: '🧘‍♀️', tag: 'メンタル↑', ap: 1, cost: 0,
+    run: () => ({ stats: { mental: rnd(5, 8) }, msg: '深呼吸して心を整えた。わたし、えらい🧘‍♀️' }) },
+  { id: 'este', name: 'エステ', emoji: '💆‍♀️', tag: '美肌↑↑', ap: 2, cost: 1500,
+    run: () => ({ stats: { bihada: rnd(9, 14), mental: 2 }, money: -1500, msg: '奮発してエステへ！別人級のうるおい💎' }) },
+  { id: 'baito', name: 'バイト', emoji: '💰', tag: 'コイン↑', ap: 2, cost: 0,
+    run: () => { const m = rnd(1800, 2600); return { money: m, stats: { mental: -rnd(1, 3) }, msg: `バイトで ${m}コイン ゲット！ちょっと疲れた…`, tone: '' }; } },
+  { id: 'sns', name: 'SNS投稿', emoji: '📸', tag: 'フォロワー↑', ap: 1, cost: 0,
+    run: () => {
+      const c = charm();
+      const gain = Math.round(c * rnd(3, 7)) + rnd(20, 90);
+      const good = Math.random() < clamp(c / 100 + 0.35, 0, 0.95);
+      if (good) return { followers: gain, stats: { mental: 2, fashion: 1 }, msg: `映える投稿がバズった📸 +${gain}フォロワー！` };
+      return { followers: Math.round(gain * 0.4), stats: { mental: -2 }, msg: 'うーん、反応いまいち…でも気にしない！', tone: 'bad' };
+    } },
+];
+
+/* =========================================================
+   画面制御
+   ========================================================= */
+function show(screen) {
+  ['title', 'intro', 'goal', 'game'].forEach((s) => { $(s).hidden = s !== screen; });
+}
+
+function render() {
+  const c = charm();
+  const rk = rankInfo(c);
+  $('hudDay').textContent = S.day;
+  $('hudMoney').textContent = S.money.toLocaleString();
+  $('hudFollowers').textContent = S.followers.toLocaleString();
+  $('playerName').textContent = S.name;
+  const g = GOALS[S.goal] || GOALS.sexy;
+  $('goalChip').textContent = `🎯 目指せ！${g.emoji}${g.name}`;
+  $('rankTitle').textContent = rk.t;
+  $('playerAvatar').innerHTML = charFace('you', rk.acc);
+  $('charmFill').style.width = c + '%';
+  $('charmVal').textContent = c;
+
+  // ステータス
+  $('stats').innerHTML = STATS.map((st) => {
+    const v = S.stats[st.key];
+    return `<div class="stat" data-k="${st.key}">
+      <div class="stat-top"><span class="stat-name">${st.name}</span><span class="stat-num">${v}</span></div>
+      <div class="stat-bar"><i style="width:${v}%;background:${st.color}"></i></div>
+    </div>`;
+  }).join('');
+
+  // 行動力ドット
+  $('apDots').innerHTML = Array.from({ length: AP_PER_DAY }, (_, i) =>
+    `<span class="ap-dot ${i < S.ap ? 'on' : ''}"></span>`).join('');
+
+  // 行動カード
+  $('actions').innerHTML = ACTIONS.map((a) => {
+    const disabled = a.ap > S.ap || (a.cost > S.money);
+    return `<div class="action ${disabled ? 'disabled' : ''}" data-id="${a.id}">
+      <span class="action-cost">${'●'.repeat(a.ap)}${a.cost ? ' 💰' + a.cost : ''}</span>
+      <div class="action-emoji">${a.emoji}</div>
+      <div class="action-name">${a.name}</div>
+      <div class="action-tag">${a.tag}</div>
+    </div>`;
+  }).join('');
+
+  // ログ
+  $('log').innerHTML = S.log.length
+    ? S.log.map((l) => `<div class="log-item ${l.tone}">${l.text}</div>`).join('')
+    : '<div class="log-item">今日は何をする？</div>';
+}
+
+function bump(key) {
+  const el = document.querySelector(`.stat[data-k="${key}"]`);
+  if (el) { el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); }
+}
+
+/* =========================================================
+   行動の確認 → 実行
+   ========================================================= */
+let pendingAction = null;
+function askAction(a) {
+  pendingAction = a;
+  $('confirmEmoji').textContent = a.emoji;
+  $('confirmName').textContent = a.name;
+  $('confirmDesc').textContent = a.tag + ' の効果があるよ';
+  $('confirmCost').textContent = `行動力 ${a.ap}${a.cost ? `　・　💰${a.cost}コイン` : ''}`;
+  $('confirm').hidden = false;
+}
+function doAction() {
+  $('confirm').hidden = true;
+  const a = pendingAction; pendingAction = null;
+  if (!a) return;
+  S.ap -= a.ap;
+  const eff = a.run();
+  grant(eff, eff.msg, eff.tone);
+  save();
+  render();
+  if (eff.stats) Object.keys(eff.stats).forEach(bump);
+}
+
+/* =========================================================
+   1日の終わり / 次の日
+   ========================================================= */
+function endDay() {
+  // フォロワーの自然増加（魅力が高いほど伸びる）
+  const passive = Math.round(charm() * rnd(1, 3)) + rnd(5, 25);
+  S.followers += passive;
+  logMsg(`💤 おやすみ…（フォロワー +${passive}）`, '');
+
+  if (S.day >= MAX_DAY) { save(); runEnding(); return; }
+  S.day += 1;
+  S.ap = AP_PER_DAY;
+  save();
+  beginDay();
+}
+
+function beginDay() {
+  render();
+  const ev = scheduledEvent(S.day);
+  if (ev) { runDialogue(ev, () => { render(); save(); }); return; }
+  // ストーリーが無い日は、たまにミニイベント
+  if (Math.random() < 0.5) {
+    const mini = pickRandomEvent();
+    if (mini) { runDialogue(mini, () => { render(); save(); }); }
+  }
+}
+
+/* =========================================================
+   会話（ダイアログ）エンジン
+   steps: [{who, text, choices?}]
+   choices: [{label, apply()->省略可の結果テキスト}]
+   ========================================================= */
+function runDialogue(steps, onDone) {
+  const ov = $('dialogue');
+  const box = $('dlgBox');
+  let i = 0;
+
+  function showStep() {
+    if (i >= steps.length) { ov.hidden = true; if (onDone) onDone(); return; }
+    const s = steps[i];
+    const who = s.who || 'narr';
+    if (who === 'narr') {
+      $('dlgAvatar').innerHTML = '';
+      $('dlgName').textContent = '';
+    } else {
+      $('dlgAvatar').innerHTML = charFace(who);
+      $('dlgName').textContent = CHAR_NAME[who] === 'あなた' ? S.name : CHAR_NAME[who];
+    }
+    $('dlgText').textContent = s.text.replace(/\{name\}/g, S.name);
+
+    const cbox = $('dlgChoices');
+    if (s.choices) {
+      $('dlgTap').style.visibility = 'hidden';
+      cbox.innerHTML = '';
+      s.choices.forEach((ch) => {
+        const b = document.createElement('button');
+        b.className = 'dlg-choice';
+        b.textContent = ch.label;
+        b.onclick = (e) => {
+          e.stopPropagation();
+          const res = ch.apply ? ch.apply() : null;
+          cbox.innerHTML = '';
+          box.style.pointerEvents = 'auto';
+          i += 1;
+          if (res) steps.splice(i, 0, { who: s.who, text: res });
+          showStep();
+        };
+        cbox.appendChild(b);
+      });
+    } else {
+      cbox.innerHTML = '';
+      $('dlgTap').style.visibility = 'visible';
+      box.style.pointerEvents = 'auto';
+    }
+  }
+
+  box.onclick = () => {
+    const s = steps[i];
+    if (s && s.choices) return;
+    i += 1;
+    showStep();
+  };
+
+  ov.hidden = false;
+  showStep();
+}
+
+/* =========================================================
+   ストーリーイベント（日付固定）
+   ========================================================= */
+function scheduledEvent(day) {
+  if (day === 1 && !S.done.d1) { S.done.d1 = true; return [
+    { who: 'narr', text: '「かわいくなりたい」——ずっと思ってた。でも、何から始めればいいのか分からなくて。' },
+    { who: 'narr', text: 'そんな眠れない夜、SNSでキラキラ輝くその人を見つけた。' },
+    { who: 'mina', text: 'はじめまして！トップアイドルのMINAだよ⭐ 見つけてくれてありがとう♪' },
+    { who: 'mina', text: 'ねえ、キミにも“なりたい自分”ってある？ …あるなら、今日がその一歩目だよ。' },
+    { who: 'you', text: '…うん。わたし、30日で——爆美女になる！' },
+    { who: 'narr', text: 'こうして、{name}の30日間の自分みがきが始まった。がんばれ、{name}！' },
+  ]; }
+
+  if (day === 5 && !S.done.d5) { S.done.d5 = true; return [
+    { who: 'coco', text: 'やっほー！美容インフルエンサーの“ここ”だよ〜🌷 最近すごく頑張ってるらしいね？' },
+    { who: 'coco', text: 'いいこと教えてあげる。“続けること”が一番のコスメなの。今日から一緒にがんばろ？',
+      choices: [
+        { label: '💗 よろしくお願いします！', apply: () => { grant({ stats: { bihada: 6, mental: 3 } }, 'ここ先生に美容の基本を教わった！'); return 'その調子！{name}なら絶対キレイになれるよ〜✨'; } },
+        { label: '🌱 一人でもがんばれる…かな', apply: () => { grant({ stats: { mental: 5 } }, '自分を信じてみることにした。'); return 'えらい！その芯の強さ、すっごく素敵だと思う。'; } },
+      ] },
+  ]; }
+
+  if (day === 10 && !S.done.d10) { S.done.d10 = true; return [
+    { who: 'reina', text: 'ふーん。あなたが最近フォロワー伸ばしてる子？ わたしは読者モデルのレイナ。' },
+    { who: 'reina', text: '先に言っておくけど。わたし、負けるのは大っ嫌いなの。……せいぜい、追いついてきなさい。',
+      choices: [
+        { label: '🔥 絶対に追いついてみせる！', apply: () => { grant({ stats: { style: 5, fashion: 3, mental: 4 } }, '負けん気に火がついた！'); return '……いい目してるじゃない。ちょっとだけ、認めてあげる。'; } },
+        { label: '👀 すごい人だな…', apply: () => { grant({ stats: { fashion: 6 } }, 'レイナの着こなしを研究した。'); return '見て学ぶのも悪くない。でも、いつまでも見てる側じゃダメよ？'; } },
+      ] },
+  ]; }
+
+  if (day === 15 && !S.done.d15) { S.done.d15 = true;
+    if (charm() >= 50) return [
+      { who: 'mina', text: '中間チェックだよ〜！ わ、キミ、この短期間ですっごく垢抜けたね！?' },
+      { who: 'mina', text: 'この調子ならステージ本番、きっと輝けるよ。ごほうびのシェア、いっちゃう♪',
+        choices: [{ label: '✨ ありがとう、がんばる！', apply: () => { grant({ followers: 900, stats: { mental: 4 } }, 'MINAが紹介してくれてフォロワー急増📈'); return 'ふふ、キミの成長、わたしが一番のファンだからね！'; } }] },
+    ];
+    return [
+      { who: 'mina', text: '中間チェックだよ〜！ …うんうん、いい感じに変わってきてる。' },
+      { who: 'mina', text: '焦らなくて大丈夫。“なりたい”って気持ちがある限り、まだまだ伸びるから！',
+        choices: [{ label: '💪 まだまだこれから！', apply: () => { grant({ stats: { mental: 6, style: 2 } }, 'MINAの言葉で前向きになれた。'); return 'その意気！残り半分、一緒に駆け抜けよ♪'; } }] },
+    ];
+  }
+
+  if (day === 20 && !S.done.d20) { S.done.d20 = true; return [
+    { who: 'narr', text: '鏡を見て、ふと不安になる夜。「わたし、本当に変われてるのかな…？」' },
+    { who: 'coco', text: '落ち込むのも、頑張ってる証拠だよ。完璧じゃなくたっていいの。',
+      choices: [
+        { label: '😌 少し休む', apply: () => { grant({ stats: { mental: 8 } }, 'しっかり休んで、心が軽くなった。'); return 'うんうん、休むのも自分みがきのうち。えらい！'; } },
+        { label: '🔥 弱音は吐かず進む', apply: () => { grant({ stats: { style: 4, chisei: 4, mental: 2 } }, '歯を食いしばって前に進んだ。'); return 'そのガッツ、眩しいくらい。無理はしすぎないでね？'; } },
+      ] },
+  ]; }
+
+  if (day === 25 && !S.done.d25) { S.done.d25 = true;
+    const strong = charm() >= 60;
+    return [
+      { who: 'reina', text: strong ? '……ちょっと見ない間に、ずいぶん変わったね。悔しいけど、認めるわ。'
+                                   : '本番が近いわね。……あなた、まだ伸びるでしょ。逃げないでよ。' },
+      { who: 'reina', text: '本番のステージ、全力で来なさい。あなたと競えるの、ちょっとだけ楽しみにしてるんだから。',
+        choices: [{ label: '🤝 望むところ！', apply: () => { grant({ stats: { mental: 5, fashion: 4 } }, 'レイナとの約束が力になった。'); return 'ふっ……言ったわね。当日、泣かせてあげる。'; } }] },
+    ];
+  }
+
+  return null;
+}
+
+/* ---------- ミニランダムイベント ---------- */
+const MINI = [
+  () => [{ who: 'narr', text: '歩いていたら「モデルに興味ない？」とスカウトされた！',
+    choices: [{ label: 'やった！', apply: () => { grant({ stats: { mental: 3 }, followers: 60 }, '街でスカウトされた！自信がついた✨'); } }] }],
+  () => [{ who: 'narr', text: 'SNSに優しいコメントが届いた✉️「あなたを見て、私もがんばれる」',
+    choices: [{ label: 'うれしい…！', apply: () => { grant({ stats: { mental: 5 }, followers: 40 }, 'ファンの言葉に胸が熱くなった。'); } }] }],
+  () => [{ who: 'narr', text: 'お気に入りショップがセール中！ 買っちゃう？',
+    choices: [
+      { label: '👗 買う（-800）', apply: () => { if (S.money >= 800) { grant({ stats: { fashion: 7 }, money: -800 }, 'セールでおしゃれ度アップ👗'); } else { logMsg('コインが足りず、断念…', 'bad'); } } },
+      { label: 'がまん', apply: () => { grant({ stats: { mental: 2 } }, 'ぐっと我慢。えらい！'); } },
+    ] }],
+  () => [{ who: 'narr', text: '寝不足でお肌が荒れちゃった…😢' , choices: [{ label: 'ケアしなきゃ', apply: () => { grant({ stats: { bihada: -4 } }, '肌荒れでちょっとダメージ…', 'bad'); } }] }],
+  () => [{ who: 'narr', text: 'ジムで励まし合える友達ができた！', choices: [{ label: 'なかま！', apply: () => { grant({ stats: { style: 3, mental: 3 } }, 'ジム友ができてモチベUP💪'); } }] }],
+  () => [{ who: 'narr', text: '雨で予定が崩れた…けど、おかげで読書がはかどった📚', choices: [{ label: 'ラッキー', apply: () => { grant({ stats: { chisei: 4 } }, '雨の日は知性みがき📚'); } }] }],
+  () => [{ who: 'narr', text: '話題のカフェで気分転換🍰 心がほぐれた。', choices: [{ label: 'しあわせ', apply: () => { grant({ stats: { mental: 4 } }, 'カフェでリフレッシュ🍰'); } }] }],
+];
+function pickRandomEvent() { return MINI[rnd(0, MINI.length - 1)](); }
+
+/* =========================================================
+   エンディング
+   ========================================================= */
+function runEnding() {
+  const finale = [
+    { who: 'narr', text: 'ついに迎えた、30日目の夜。大きなステージのオーディション。' },
+    { who: 'mina', text: 'さあ、ライトの前へ。キミが積み重ねた30日を、世界に見せてあげて！' },
+  ];
+  runDialogue(finale, showEnding);
+}
+
+function showEnding() {
+  const c = charm();
+  const rk = rankInfo(c);
+  let msg;
+  if (c >= 90) msg = 'スポットライトを浴びた瞬間、会場が息をのんだ。伝説の爆美女、ここに誕生——！あなたの努力は、誰よりも輝いていた。';
+  else if (c >= 78) msg = 'ステージの上のあなたは、誰が見ても本物の美女。30日前の自分が、今のあなたを見たらきっと泣いて喜ぶ。';
+  else if (c >= 64) msg = 'ふんわり可愛い笑顔に、会場は大きな拍手。あなたらしい魅力が、たしかに花開いた一日だった。';
+  else if (c >= 48) msg = 'まだ荒削り。でも、みがけば光る原石の輝きは本物。この30日は、始まりの一歩にすぎない。';
+  else msg = '結果はこれから。でも「変わりたい」と願って動いた30日は、決して無駄じゃない。物語は、まだ続く。';
+
+  // 目標タイプに応じた仕上がりコメント
+  const g = GOALS[S.goal] || GOALS.sexy;
+  const gs = goalScore();
+  const goalLine = gs >= 75 ? `理想の「${g.name}」を完璧に手に入れた——${g.end}`
+                 : gs >= 55 ? `目指した「${g.name}」の魅力が、たしかに花開いていた。`
+                 : `「${g.name}」への道はまだ途中。でも、輪郭は見えてきた。`;
+
+  $('endingAvatar').innerHTML = charFace('you', rk.acc);
+  $('endingRank').textContent = rk.t;
+  $('endingName').textContent = `${S.name} ・ ${g.emoji}${g.name}（完成度${gs}）`;
+  $('endingStats').innerHTML =
+    `<span class="ending-stat">魅力 ${c}</span>` +
+    `<span class="ending-stat">👥 ${S.followers.toLocaleString()}</span>` +
+    STATS.map((st) => `<span class="ending-stat">${st.name} ${S.stats[st.key]}</span>`).join('');
+  $('endingMsg').textContent = msg + '\n\n' + goalLine;
+  $('ending').hidden = false;
+}
+
+/* =========================================================
+   起動 / イベント登録
+   ========================================================= */
+function startNewGame(name, goalId) {
+  S = defaultState();
+  S.name = name || 'ミライ';
+  S.goal = GOALS[goalId] ? goalId : 'sexy';
+  // 目標タイプの得意ステータスが少し高い状態でスタート
+  GOALS[S.goal].focus.forEach((k) => { S.stats[k] = clamp(S.stats[k] + 5, 0, 100); });
+  save();
+  show('game');
+  beginDay();
+}
+
+function renderGoalCards() {
+  $('goalList').innerHTML = Object.keys(GOALS).map((id) => {
+    const g = GOALS[id];
+    const focus = g.focus.map((k) => STATS.find((s) => s.key === k).name).join('・');
+    return `<button class="goal-card" data-goal="${id}">
+      <span class="goal-emoji">${g.emoji}</span>
+      <span class="goal-body">
+        <span class="goal-name">${g.name}</span>
+        <span class="goal-desc">${g.desc}</span>
+        <span class="goal-focus">得意になる → ${focus}</span>
+      </span>
+    </button>`;
+  }).join('');
+}
+
+function boot() {
+  // タイトルのヒーロー画像
+  $('titleHero').innerHTML = charFace('you', 'bow');
+  $('introHero').innerHTML = charFace('you', 'heart');
+  if (hasSave()) $('continueBtn').hidden = false;
+
+  $('startBtn').onclick = () => { show('intro'); };
+  $('continueBtn').onclick = () => { load(); show('game'); render(); };
+
+  let chosenName = 'ミライ';
+  $('introGoBtn').onclick = () => {
+    chosenName = ($('nameInput').value || '').trim() || 'ミライ';
+    renderGoalCards();
+    show('goal');
+  };
+
+  $('goalList').addEventListener('click', (e) => {
+    const el = e.target.closest('.goal-card');
+    if (el) startNewGame(chosenName, el.dataset.goal);
+  });
+
+  // 行動カード
+  $('actions').addEventListener('click', (e) => {
+    const el = e.target.closest('.action');
+    if (!el || el.classList.contains('disabled')) return;
+    const a = ACTIONS.find((x) => x.id === el.dataset.id);
+    if (a) askAction(a);
+  });
+
+  $('confirmNo').onclick = () => { $('confirm').hidden = true; pendingAction = null; };
+  $('confirmYes').onclick = doAction;
+
+  $('sleepBtn').onclick = endDay;
+
+  $('resetBtn').onclick = () => {
+    if (confirm('本当に最初からやり直す？（今のデータは消えます）')) { wipe(); location.reload(); }
+  };
+  $('endingAgain').onclick = () => { $('ending').hidden = true; wipe(); show('intro'); };
+}
+
+document.addEventListener('DOMContentLoaded', boot);
+</script>
+</body>
+</html>
