@@ -192,15 +192,37 @@ class Handler(BaseHTTPRequestHandler):
                                        ensure_ascii=False))
 
 
+def _load_dotenv():
+    """同じフォルダに .env があればキーを読み込む（ターミナルで export しなくて済む）。"""
+    envf = Path(__file__).resolve().parent / ".env"
+    if not envf.exists():
+        return
+    for line in envf.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        k, v = line.split("=", 1)
+        k, v = k.strip(), v.strip().strip('"').strip("'")
+        if k and v and not os.environ.get(k):
+            os.environ[k] = v
+
+
 def main():
-    # 起動時に env の有無を表示
+    _load_dotenv()
     have_x = bool(os.environ.get("X_BEARER_TOKEN"))
     have_llm = bool(os.environ.get("XAI_API_KEY") or os.environ.get("ANTHROPIC_API_KEY"))
-    print(f"tmark_web → http://{HOST}:{PORT}")
-    print(f"  X_BEARER_TOKEN: {'set' if have_x else 'NOT set（フォームで入力可）'}")
+    url = f"http://{HOST}:{PORT}"
+    print(f"tmark_web → {url}")
+    print(f"  X_BEARER_TOKEN: {'set' if have_x else 'NOT set（画面で入力可）'}")
     print(f"  LLM key: {'set' if have_llm else 'NOT set（精度のため推奨）'}")
-    print("  Ctrl+C で終了")
-    ThreadingHTTPServer((HOST, PORT), Handler).serve_forever()
+    print("  このウィンドウは開いたままに。終了は Ctrl+C（または閉じる）")
+    # ブラウザを自動で開く（サーバ起動直後）
+    import threading, webbrowser
+    threading.Timer(1.0, lambda: webbrowser.open(url)).start()
+    try:
+        ThreadingHTTPServer((HOST, PORT), Handler).serve_forever()
+    except KeyboardInterrupt:
+        print("\n終了しました。")
 
 
 PAGE = r"""<!doctype html><html lang="ja"><head><meta charset="utf-8">
