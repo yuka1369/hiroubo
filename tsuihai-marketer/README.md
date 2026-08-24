@@ -210,6 +210,7 @@ python3 tmark.py cost --config config.json --sample-size 20 --posts-per-user 10
 ```
 tsuihai-marketer/
 ├── tmark.py                     # CLI（doctor/cost/values/audience/collect/ingest/timeline/match/target/actions/report/run）
+├── tmark_web.py                 # ローカルWebアプリ（フォームにキー入力→実行→TOP出し・手元で安全に実行）
 ├── config.example.json          # 設定テンプレ
 ├── config.demo.json             # サンプルデータで動くデモ設定
 ├── .env.example
