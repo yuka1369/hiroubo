@@ -1,0 +1,37 @@
+{
+  "product": {
+    "name": "CallMe",
+    "category": "生産性 / ADHD支援アプリ",
+    "price": "無料（PWA）",
+    "stage": "launched",
+    "description": "予定の少し前に『電話がかかってくる』アラームアプリ。ADHDなどで通知を見流してしまう人向けに、フルスクリーンの着信画面・鳴り続ける着信音・バイブで、本物の電話のように無視しづらく時間を知らせる。"
+  },
+  "own_account": {
+    "handle": "@YOUR_HANDLE",
+    "timeline_file": "data/own_timeline.jsonl"
+  },
+  "audience": {
+    "sample_size": 20,
+    "language": "ja"
+  },
+  "collection": {
+    "posts_per_user": 10
+  },
+  "budget": {
+    "currency": "JPY",
+    "usd_jpy": 155,
+    "per_run_limit_jpy": 1500,
+    "monthly_limit_jpy": 5000,
+    "enforce": true,
+    "prices_usd": { "post_read": 0.005, "user_read": 0.010 }
+  },
+  "llm": {
+    "provider": "grok",
+    "model": "grok-3-latest",
+    "temperature": 0.3,
+    "max_tokens": 2048
+  },
+  "nob_kit": { "path": "../x-audience-research-kit", "data_dir": "data/processed" },
+  "data_dir": "data",
+  "reports_dir": "reports"
+}
