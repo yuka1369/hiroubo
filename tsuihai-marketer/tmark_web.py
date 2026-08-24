@@ -42,7 +42,11 @@ from tsuihai_marketer.targeting import build_targets  # noqa: E402
 from tsuihai_marketer.value_extraction import extract_values  # noqa: E402
 from tsuihai_marketer.xclient import XClient  # noqa: E402
 
-HOST, PORT = "127.0.0.1", int(os.environ.get("TMARK_PORT", "8787"))
+# ローカルは 127.0.0.1、クラウド(Cloud Run等)は TMARK_HOST=0.0.0.0 と PORT を渡す
+HOST = os.environ.get("TMARK_HOST", "127.0.0.1")
+PORT = int(os.environ.get("PORT") or os.environ.get("TMARK_PORT") or "8787")
+# 公開URLで動かす場合、APP_PASSWORD を設定すると簡易パスワードで保護できる
+APP_PASSWORD = os.environ.get("APP_PASSWORD", "")
 
 
 def _yen(n) -> str:
@@ -167,7 +171,8 @@ class Handler(BaseHTTPRequestHandler):
             env = {"X_BEARER_TOKEN": bool(os.environ.get("X_BEARER_TOKEN")),
                    "XAI_API_KEY": bool(os.environ.get("XAI_API_KEY")),
                    "ANTHROPIC_API_KEY": bool(os.environ.get("ANTHROPIC_API_KEY"))}
-            self._send(200, json.dumps({"ok": True, "env": env}))
+            self._send(200, json.dumps({"ok": True, "env": env,
+                                        "password_required": bool(APP_PASSWORD)}))
         else:
             self._send(404, json.dumps({"error": "not found"}))
 
@@ -180,6 +185,9 @@ class Handler(BaseHTTPRequestHandler):
             body = json.loads(self.rfile.read(length).decode("utf-8") or "{}")
         except Exception as e:
             self._send(400, json.dumps({"error": f"bad request: {e}"}))
+            return
+        if APP_PASSWORD and body.get("password", "") != APP_PASSWORD:
+            self._send(200, json.dumps({"ok": False, "error": "パスワードが違います"}))
             return
         logs = []
         try:
@@ -211,14 +219,17 @@ def main():
     _load_dotenv()
     have_x = bool(os.environ.get("X_BEARER_TOKEN"))
     have_llm = bool(os.environ.get("XAI_API_KEY") or os.environ.get("ANTHROPIC_API_KEY"))
+    is_local = HOST in ("127.0.0.1", "localhost")
     url = f"http://{HOST}:{PORT}"
     print(f"tmark_web → {url}")
     print(f"  X_BEARER_TOKEN: {'set' if have_x else 'NOT set（画面で入力可）'}")
     print(f"  LLM key: {'set' if have_llm else 'NOT set（精度のため推奨）'}")
-    print("  このウィンドウは開いたままに。終了は Ctrl+C（または閉じる）")
-    # ブラウザを自動で開く（サーバ起動直後）
-    import threading, webbrowser
-    threading.Timer(1.0, lambda: webbrowser.open(url)).start()
+    if APP_PASSWORD:
+        print("  APP_PASSWORD: 有効（画面でパスワード入力が必要）")
+    if is_local:
+        print("  このウィンドウは開いたままに。終了は Ctrl+C（または閉じる）")
+        import threading, webbrowser
+        threading.Timer(1.0, lambda: webbrowser.open(url)).start()
     try:
         ThreadingHTTPServer((HOST, PORT), Handler).serve_forever()
     except KeyboardInterrupt:
@@ -281,6 +292,8 @@ textarea{min-height:64px;resize:vertical}
     <label>XAI_API_KEY（Grok・精度用/任意）</label><input id="xai" class="key mono" type="password" autocomplete="off" placeholder="任意">
     <div class="hint">パスワード欄として扱われ、送信先はこのPCのローカルサーバのみです。</div>
   </details>
+  <div id="pwRow" style="display:none"><label>アクセスパスワード</label>
+    <input id="apppw" type="password" autocomplete="off" placeholder="管理者が設定したパスワード"></div>
   <button class="btn" id="run">実行する（X APIで収集→TOP出し）</button>
   <div class="hint">初回テストは20人＝約¥900。予算上限を超える前に自動停止します。</div>
   <div class="log" id="log" style="display:none"></div>
@@ -291,6 +304,8 @@ textarea{min-height:64px;resize:vertical}
 <script>
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+// 公開URLでパスワード保護されているか確認して入力欄を出す
+fetch("/health").then(r=>r.json()).then(d=>{ if(d&&d.password_required) $("pwRow").style.display=""; }).catch(()=>{});
 $("run").addEventListener("click", async ()=>{
   const btn=$("run"); btn.disabled=true;
   const log=$("log"); log.style.display=""; log.textContent="実行中…（収集に1〜数分かかることがあります）";
@@ -301,6 +316,7 @@ $("run").addEventListener("click", async ()=>{
     sample_size:+$("sample").value, posts_per_user:+$("ppu").value,
     per_run_limit_jpy:+$("perrun").value, monthly_limit_jpy:+$("monthly").value,
     x_bearer:$("xbearer").value, xai_key:$("xai").value,
+    password:$("apppw").value,
   };
   try{
     const r=await fetch("/api/run",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});

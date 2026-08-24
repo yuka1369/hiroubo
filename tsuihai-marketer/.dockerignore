@@ -1,0 +1,8 @@
+.env
+data/
+reports/
+__pycache__/
+**/__pycache__/
+*.pyc
+.git/
+webdemo*.html
