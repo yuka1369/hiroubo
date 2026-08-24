@@ -46,11 +46,16 @@
 python3 -m http.server 8000   # → http://localhost:8000/bakubijo/
 ```
 
+## 1ファイル版 / クラウドアーティファクト
+
+`standalone.html` は CSS・JS をすべて埋め込んだ**自己完結の1ファイル版**です。外部ファイル参照がないので、ダブルクリックするだけでローカルで遊べ、Claude のクラウドアーティファクトとしてもそのまま公開できます。
+
 ## ファイル構成
 
 | ファイル | 役割 |
 |---|---|
 | `index.html` | 画面 |
+| `standalone.html` | 全部入り1ファイル版（アーティファクト用） |
 | `styles.css` | 見た目 |
 | `game.js` | 育成ロジック・ストーリー・キャラ描画 |
 | `manifest.json` | PWA設定 |
