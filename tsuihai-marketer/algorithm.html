@@ -1,0 +1,247 @@
+<title>ツイ廃マーケターの仕組み</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@500;700;900&family=Murecho:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap">
+<style>
+:root{
+  --bg:#F5F7F9; --surface:#FFFFFF; --surface-2:#EDF1F5; --ink:#151A21; --muted:#5F6A79;
+  --line:#DEE4EC; --accent:#0A9BA8; --accent-strong:#06727C; --accent-soft:rgba(10,155,168,.12);
+  --network:#D9733F; --network-soft:rgba(217,115,63,.14); --good:#2E9E67;
+  --shadow:0 1px 2px rgba(20,30,45,.04),0 8px 28px rgba(20,30,45,.06); --r:14px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0C0F13; --surface:#151A21; --surface-2:#1D242D; --ink:#E7EDF4; --muted:#93A0B1;
+  --line:#28303B; --accent:#26BECB; --accent-strong:#63D6DF; --accent-soft:rgba(38,190,203,.16);
+  --network:#EE9366; --network-soft:rgba(238,147,102,.18); --good:#4EBE85;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35);
+}}
+:root[data-theme="dark"]{
+  --bg:#0C0F13; --surface:#151A21; --surface-2:#1D242D; --ink:#E7EDF4; --muted:#93A0B1;
+  --line:#28303B; --accent:#26BECB; --accent-strong:#63D6DF; --accent-soft:rgba(38,190,203,.16);
+  --network:#EE9366; --network-soft:rgba(238,147,102,.18); --good:#4EBE85;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box} html,body{margin:0}
+body{background:var(--bg); color:var(--ink); font-family:"Murecho",system-ui,sans-serif;
+  line-height:1.7; -webkit-font-smoothing:antialiased}
+.wrap{max-width:820px; margin:0 auto; padding:30px 20px 72px}
+h1,h2,h3{font-family:"Zen Kaku Gothic New",system-ui,sans-serif; text-wrap:balance; margin:0}
+.mono{font-family:"Space Mono",ui-monospace,monospace; font-variant-numeric:tabular-nums}
+.eyebrow{font-family:"Space Mono",monospace; font-size:12px; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--accent-strong); margin-bottom:10px}
+h1{font-size:clamp(28px,5vw,40px); font-weight:900; line-height:1.1}
+.lede{color:var(--muted); font-size:16px; margin-top:14px}
+h2{font-size:20px; font-weight:700; margin:44px 0 6px; padding-top:14px; border-top:1px solid var(--line)}
+.kicker{font-family:"Space Mono",monospace; font-size:12px; color:var(--accent-strong); letter-spacing:.08em}
+h3{font-size:15.5px; font-weight:700; margin:22px 0 6px}
+p{margin:10px 0}
+.thesis{background:var(--accent-soft); border:1px solid var(--accent); border-radius:var(--r);
+  padding:18px 20px; margin-top:22px; font-size:16px}
+.thesis b{color:var(--accent-strong)}
+code{font-family:"Space Mono",monospace; background:var(--surface-2); padding:1px 6px; border-radius:5px; font-size:.92em}
+figure{margin:20px 0; background:var(--surface); border:1px solid var(--line); border-radius:var(--r);
+  padding:18px 16px 12px; box-shadow:var(--shadow)}
+figure svg{display:block; width:100%; height:auto; color:var(--ink)}
+figcaption{font-size:12.5px; color:var(--muted); margin-top:12px; text-align:center; line-height:1.5}
+.formula{background:var(--surface); border:1px solid var(--line); border-left:4px solid var(--accent);
+  border-radius:10px; padding:14px 16px; margin:16px 0; font-family:"Space Mono",monospace;
+  font-size:14px; overflow-x:auto}
+.formula .lbl{color:var(--muted); font-size:12px; display:block; margin-bottom:6px; font-family:"Murecho",sans-serif}
+table{width:100%; border-collapse:collapse; margin:16px 0; font-size:13.5px}
+th,td{text-align:left; padding:9px 10px; border-bottom:1px solid var(--line); vertical-align:top}
+th{font-family:"Space Mono",monospace; font-size:11.5px; letter-spacing:.05em; text-transform:uppercase; color:var(--muted)}
+td .w{font-family:"Space Mono",monospace; font-weight:700; color:var(--accent-strong); white-space:nowrap}
+.ex{background:var(--surface-2); border-radius:10px; padding:13px 15px; margin:14px 0; font-size:13.5px}
+.ex .row{display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:4px 0}
+.tok{font-family:"Space Mono",monospace; font-size:12px; background:var(--surface); border:1px solid var(--line);
+  padding:2px 7px; border-radius:6px}
+.arrow{color:var(--muted)}
+footer{margin-top:44px; padding-top:18px; border-top:1px solid var(--line); color:var(--muted); font-size:12.5px}
+.toggle{position:fixed; top:14px; right:14px; z-index:10; background:var(--surface); border:1px solid var(--line);
+  color:var(--muted); border-radius:999px; width:38px; height:38px; cursor:pointer; font-size:16px; box-shadow:var(--shadow)}
+.toggle:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+</style>
+
+<button class="toggle" id="themeToggle" aria-label="テーマ切替">◐</button>
+<div class="wrap">
+  <div class="eyebrow">ツイ廃マーケター / how it works</div>
+  <h1>内部アルゴリズムの仕組み</h1>
+  <p class="lede">やっていることは一貫して「テキストをベクトルにして、近さ（コサイン類似度）で測る」。
+    その上に、Xが<b>ネットワーク（グラフ）で表示を決める</b>という前提を重ねています。</p>
+
+  <div class="thesis">
+    <b>核心の仮説：</b>あるユーザーのタイムラインには、その人の<b>ネットワーク（絡む相手）</b>に流れている内容が出る。
+    だから「その人のTLに一番<b>溶け込む</b>自分の過去ツイート」をTOP出しすれば、それが最も<b>表示されやすい</b>候補になる。
+  </div>
+
+  <!-- ================= 土台 ================= -->
+  <h2><span class="kicker">FOUNDATION</span><br>土台：テキスト → ベクトル → 類似度</h2>
+  <p>形態素解析（MeCab等）を使わず、日本語は<b>文字bigram（2文字ずつ）</b>、英数字は単語に分解します。
+    各語をTF-IDFで重み付けし、正規化してベクトルにします。</p>
+
+  <div class="ex">
+    <div class="row"><span class="arrow">入力</span>「通知が消える」</div>
+    <div class="row"><span class="arrow">bigram →</span>
+      <span class="tok">通知</span><span class="tok">知が</span><span class="tok">が消</span><span class="tok">消え</span><span class="tok">える</span></div>
+    <div class="row"><span class="arrow">TF-IDF →</span> 各語に重み（ありふれた語は軽く、特有の語は重く）</div>
+  </div>
+
+  <div class="formula"><span class="lbl">語の重み（TF-IDF）</span>
+    weight(語) = tf × idf<br>
+    tf = 語の出現数 / 文書の総語数<br>
+    idf = log( (1 + 文書数N) / (1 + その語を含む文書数df) ) + 1</div>
+
+  <div class="formula"><span class="lbl">2つの文書の近さ（コサイン類似度・0〜1）</span>
+    cos(A, B) = Σ Aᵢ·Bᵢ   ／  ※A,Bは長さ1に正規化済みなので内積がそのまま類似度</div>
+
+  <p>この「cos()」が、以降ぜんぶのステップで共通の“近さ”のものさしになります。</p>
+
+  <!-- ================= パイプライン ================= -->
+  <h2><span class="kicker">PIPELINE</span><br>データの流れ（全体像）</h2>
+
+  <figure>
+    <svg viewBox="0 0 300 372" role="img" aria-label="プロダクトから価値抽出、オーディエンス設計、X APIでの収集（予算ガードつき）、タイムライン予測、ユーザー別TOP出しとアクション、レポートへと縦に流れるパイプライン図">
+      <defs>
+        <marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0 0L10 5L0 10z" fill="currentColor"/>
+        </marker>
+      </defs>
+      <!-- nodes -->
+      <g font-family="Murecho, sans-serif" font-size="12" text-anchor="middle">
+        <rect x="70" y="8" width="160" height="34" rx="8" fill="var(--surface-2)" stroke="currentColor" stroke-opacity=".3"/>
+        <text x="150" y="29" fill="currentColor">プロダクト定義</text>
+
+        <rect x="70" y="66" width="160" height="34" rx="8" fill="var(--surface-2)" stroke="currentColor" stroke-opacity=".3"/>
+        <text x="150" y="82" fill="currentColor">① 価値抽出</text>
+        <text x="150" y="95" fill="currentColor" font-size="9.5" opacity=".7">LLM / ヒューリスティック</text>
+
+        <rect x="70" y="124" width="160" height="34" rx="8" fill="var(--surface-2)" stroke="currentColor" stroke-opacity=".3"/>
+        <text x="150" y="140" fill="currentColor">② オーディエンス設計</text>
+        <text x="150" y="153" fill="currentColor" font-size="9.5" opacity=".7">層＋検索クエリ＋人数</text>
+
+        <rect x="70" y="182" width="160" height="34" rx="8" fill="var(--accent-soft)" stroke="var(--accent)"/>
+        <text x="150" y="198" fill="var(--accent-strong)" font-weight="700">③ 収集（X API）</text>
+        <text x="150" y="211" fill="var(--accent-strong)" font-size="9.5" opacity=".85">サンプリング＋TL取得</text>
+
+        <rect x="70" y="240" width="160" height="34" rx="8" fill="var(--surface-2)" stroke="currentColor" stroke-opacity=".3"/>
+        <text x="150" y="256" fill="currentColor">④ タイムライン予測</text>
+        <text x="150" y="269" fill="currentColor" font-size="9.5" opacity=".7">話題・型・エンゲージ統計</text>
+
+        <rect x="60" y="298" width="180" height="34" rx="8" fill="var(--accent-soft)" stroke="var(--accent)"/>
+        <text x="150" y="314" fill="var(--accent-strong)" font-weight="700">⑤ ユーザー別TOP出し ＋ ⑥ 施策</text>
+        <text x="150" y="326" fill="var(--accent-strong)" font-size="9.5" opacity=".85">類似度×ネットワーク</text>
+
+        <rect x="90" y="352" width="120" height="18" rx="6" fill="none" stroke="currentColor" stroke-opacity=".35"/>
+        <text x="150" y="365" fill="currentColor" font-size="10">レポート</text>
+
+        <!-- budget guard -->
+        <rect x="238" y="182" width="56" height="34" rx="6" fill="var(--network-soft)" stroke="var(--network)"/>
+        <text x="266" y="197" fill="var(--network)" font-size="9.5" font-weight="700">予算</text>
+        <text x="266" y="209" fill="var(--network)" font-size="9.5" font-weight="700">ガード</text>
+      </g>
+      <!-- arrows -->
+      <g stroke="currentColor" stroke-width="1.4" marker-end="url(#ar)" fill="none">
+        <line x1="150" y1="42" x2="150" y2="64"/>
+        <line x1="150" y1="100" x2="150" y2="122"/>
+        <line x1="150" y1="158" x2="150" y2="180"/>
+        <line x1="150" y1="216" x2="150" y2="238"/>
+        <line x1="150" y1="274" x2="150" y2="296"/>
+        <line x1="150" y1="332" x2="150" y2="350"/>
+      </g>
+      <line x1="238" y1="199" x2="230" y2="199" stroke="var(--network)" stroke-width="1.4" marker-end="url(#ar)"/>
+    </svg>
+    <figcaption>プロダクトを入れると価値→層→収集→予測→TOP出しへと一方向に流れる。<b>③収集</b>だけは
+      「予算（円）ガード」が実費を監視し、上限を超える前に収集を止める。</figcaption>
+  </figure>
+
+  <!-- ================= TOP出しの仕組み ================= -->
+  <h2><span class="kicker">CORE</span><br>ユーザー別「TOP出し」の仕組み</h2>
+  <p>ここが心臓部です。ターゲット1人ごとに、自分の全ツイートを「その人のTLへの近さ」で並べ替えます。</p>
+
+  <figure>
+    <svg viewBox="0 0 560 300" role="img" aria-label="左に自分のツイ廃履歴の各ツイート、右にターゲットユーザーのタイムラインをまとめたプロフィールベクトル。各自ツイートとプロフィールのコサイン類似度を計算し、最大のものをTOP出しとして選ぶ図">
+      <defs>
+        <marker id="ar2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0 0L10 5L0 10z" fill="currentColor"/>
+        </marker>
+      </defs>
+      <g font-family="Murecho, sans-serif" font-size="11">
+        <!-- 左：own tweets -->
+        <text x="20" y="26" font-size="11.5" font-weight="700" fill="currentColor">自分のツイ廃履歴</text>
+        <g text-anchor="start">
+          <rect x="20" y="38" width="150" height="26" rx="6" fill="var(--surface-2)" stroke="currentColor" stroke-opacity=".25"/>
+          <text x="30" y="55" fill="currentColor" font-size="10">通知は脳から消える…</text>
+          <rect x="20" y="72" width="150" height="26" rx="6" fill="var(--surface-2)" stroke="currentColor" stroke-opacity=".25"/>
+          <text x="30" y="89" fill="currentColor" font-size="10">アラーム全部止める特技…</text>
+          <rect x="20" y="106" width="150" height="26" rx="6" fill="var(--surface-2)" stroke="currentColor" stroke-opacity=".25"/>
+          <text x="30" y="123" fill="currentColor" font-size="10">タスクは視覚化しないと…</text>
+          <rect x="20" y="140" width="150" height="26" rx="6" fill="var(--surface-2)" stroke="currentColor" stroke-opacity=".25"/>
+          <text x="30" y="157" fill="currentColor" font-size="10">今日のラーメン二郎…</text>
+        </g>
+
+        <!-- 右：user profile -->
+        <text x="404" y="26" font-size="11.5" font-weight="700" fill="currentColor" text-anchor="middle">ターゲットのTL</text>
+        <rect x="360" y="60" width="180" height="86" rx="10" fill="var(--accent-soft)" stroke="var(--accent)"/>
+        <text x="450" y="86" text-anchor="middle" fill="var(--accent-strong)" font-size="10.5" font-weight="700">プロフィールベクトル</text>
+        <text x="450" y="104" text-anchor="middle" fill="var(--accent-strong)" font-size="9.5" opacity=".85">その人のツイートを</text>
+        <text x="450" y="117" text-anchor="middle" fill="var(--accent-strong)" font-size="9.5" opacity=".85">まとめてTF-IDF化</text>
+        <text x="450" y="134" text-anchor="middle" fill="var(--network)" font-size="9.5" font-weight="700">＋ @隣人（絡む相手）</text>
+
+        <!-- cosine arrows -->
+        <g stroke="currentColor" stroke-width="1.1" fill="none" marker-end="url(#ar2)" opacity=".55">
+          <line x1="172" y1="51"  x2="358" y2="92"/>
+          <line x1="172" y1="85"  x2="358" y2="99"/>
+          <line x1="172" y1="119" x2="358" y2="108"/>
+          <line x1="172" y1="153" x2="358" y2="118"/>
+        </g>
+        <text x="250" y="176" text-anchor="middle" fill="currentColor" font-size="10" opacity=".7">cos( 各ツイート , TLプロフィール )</text>
+
+        <!-- ranked output -->
+        <text x="20" y="212" font-size="11.5" font-weight="700" fill="currentColor">類似度で並べ替え → TOP出し</text>
+        <rect x="20" y="224" width="520" height="30" rx="7" fill="var(--accent-soft)" stroke="var(--accent)"/>
+        <text x="34" y="243" fill="var(--accent-strong)" font-size="10.5" font-weight="700">#1  sim 0.31</text>
+        <text x="120" y="243" fill="var(--accent-strong)" font-size="10.5">アラーム全部止める特技…  ← このユーザーに出す1本</text>
+        <rect x="20" y="260" width="520" height="24" rx="7" fill="var(--surface-2)" stroke="currentColor" stroke-opacity=".2"/>
+        <text x="34" y="276" fill="currentColor" font-size="10" opacity=".8">#2 sim 0.18  通知は脳から…    ／    #4 sim 0.02  ラーメン（無関係＝低い）</text>
+      </g>
+    </svg>
+    <figcaption>自分の各ツイートと、ターゲットの「TLプロフィール」との<b>コサイン類似度</b>を計算し降順に。
+      最上位が、その人のネットワークに最も溶け込む＝表示されやすい1本（TOP出し）。無関係な話題は自然に沈む。</figcaption>
+  </figure>
+
+  <h3>狙う順番を決める reach_score</h3>
+  <p>ユーザーは「TOP1本がどれだけ刺さるか（類似度）」と「そのネットワークにどれだけ入り込めそうか（隣人の数）」で並べます。</p>
+  <div class="formula"><span class="lbl">狙うべきユーザー順（reach_score が高い順）</span>
+    reach_score = <b style="color:var(--accent-strong)">最大類似度</b> × ( 0.6 + 0.4 × min(1, 隣人数 / 4) )</div>
+  <p style="font-size:14px; color:var(--muted)">
+    → 類似度をベースに、ネットワーク到達性で<b>最大 +40%</b> ブースト。
+    絡む相手（＝グラフの入口）が多い人ほど、その隣人経由で自分の投稿が届きやすい、という補正です。</p>
+
+  <!-- ================= Xアルゴリズム ================= -->
+  <h2><span class="kicker">ACTIONS</span><br>表示率アップの施策（Xアルゴリズムの既知シグナル）</h2>
+  <p>Xが公開したランキングアルゴリズムの重み付けをルール化し、自アカウントを診断して施策を出します。</p>
+  <table>
+    <thead><tr><th>シグナル</th><th>重み（概算）</th><th>意味</th></tr></thead>
+    <tbody>
+      <tr><td>リプに本人が返信</td><td class="w">≈ +75×</td><td>会話の連鎖が最強。まず問いかけて返信を誘発し、全部本人で返す</td></tr>
+      <tr><td>リツイート</td><td class="w">≈ +20×</td><td>拡散シグナル</td></tr>
+      <tr><td>メディア添付</td><td class="w">加点</td><td>画像/動画で滞在が伸びる</td></tr>
+      <tr><td>外部リンク単体</td><td class="w">減点</td><td>滞在を奪う。リンクはリプ欄へ</td></tr>
+      <tr><td>新しさ（recency）</td><td class="w">減衰</td><td>層の活動ピーク時間に投稿</td></tr>
+      <tr><td>ミュート/ブロック/興味なし</td><td class="w">≈ −74×</td><td>押し売り・連投は致命傷。守りが最優先</td></tr>
+    </tbody>
+  </table>
+
+  <footer>
+    ツイ廃マーケター 内部アルゴリズム解説。収集は X API（従量課金・予算内で自動停止）を利用。
+    類似度は TF-IDF＋コサイン、日本語は文字bigramでトークナイズ（外部依存なし）。
+  </footer>
+</div>
+
+<script>
+const root=document.documentElement;
+document.getElementById("themeToggle").onclick=()=>{const cur=root.getAttribute("data-theme");
+  const sys=matchMedia("(prefers-color-scheme:dark)").matches; const now=cur||(sys?"dark":"light");
+  root.setAttribute("data-theme", now==="dark"?"light":"dark");};
+</script>
