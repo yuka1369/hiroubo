@@ -223,7 +223,7 @@ def cmd_collect(cfg: Config, args) -> int:
             return 1
 
     stats = run_collection(cfg, audience, x, posts_per_user, collect_own, _log,
-                           budget=budget, cap_jpy=cap_jpy)
+                           budget=budget, cap_jpy=cap_jpy, resume=args.resume)
 
     # ---- 実費を記録 ----
     spent_jpy = budget.reads_cost_jpy(x.post_reads, x.user_reads)
@@ -340,6 +340,54 @@ def cmd_report(cfg: Config, args) -> int:
     return 0
 
 
+def _archive_history(cfg: Config) -> Path:
+    """今回の実行結果を history/<日時>/ に丸ごとコピーして履歴に残す。"""
+    import datetime, shutil
+    ts = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    dest = (cfg.root / "history" / ts)
+    n = 2
+    while dest.exists():
+        dest = cfg.root / "history" / f"{ts}-{n}"
+        n += 1
+    dest.mkdir(parents=True, exist_ok=True)
+    for name in (VALUES_F, AUDIENCE_F, POSTS_F, TIMELINE_F, MATCHES_F, TARGETS_F,
+                 ACTIONS_F, "sampled_users.json"):
+        src = cfg.path(name)
+        if src.exists():
+            shutil.copy2(src, dest / name)
+    rep = cfg.report_path(REPORT_F)
+    if rep.exists():
+        shutil.copy2(rep, dest / REPORT_F)
+    # 一覧用のメタ
+    write_json(dest / "meta.json", {
+        "run_id": ts, "product": cfg.product.name,
+        "at": datetime.datetime.now().isoformat(timespec="seconds"),
+    })
+    return dest
+
+
+def cmd_history(cfg: Config, args) -> int:
+    """過去の実行結果を一覧表示。"""
+    hroot = cfg.root / "history"
+    if not hroot.exists():
+        print("履歴はまだありません（run すると history/ に保存されます）。")
+        return 0
+    runs = sorted([d for d in hroot.iterdir() if d.is_dir()], reverse=True)
+    if not runs:
+        print("履歴はまだありません。")
+        return 0
+    print(f"■ 実行履歴（{len(runs)} 件）  ※中身は history/<ID>/analysis.md 等")
+    for d in runs:
+        meta = read_json(d / "meta.json") if (d / "meta.json").exists() else {}
+        tgt = d / TARGETS_F
+        n_tgt = len(read_json(tgt).get("targets", [])) if tgt.exists() else 0
+        posts = d / POSTS_F
+        n_posts = sum(1 for _ in posts.open()) if posts.exists() else 0
+        print(f"  {d.name}  product={meta.get('product','?')}  "
+              f"収集{n_posts}ツイート / TOP出し{n_tgt}人  →  history/{d.name}/analysis.md")
+    return 0
+
+
 def cmd_run(cfg: Config, args) -> int:
     _log("=== フルパイプライン実行 ===")
     for fn in (cmd_values, cmd_audience):
@@ -370,6 +418,12 @@ def cmd_run(cfg: Config, args) -> int:
         rc = fn(cfg, args)
         if rc:
             return rc
+    # 実行結果を履歴に保存
+    try:
+        dest = _archive_history(cfg)
+        _log(f"→ 履歴に保存: history/{dest.name}/  （`python3 tmark.py history` で一覧）")
+    except Exception as e:
+        _log(f"（履歴保存はスキップ: {e}）")
     _log("=== 完了 ===")
     return 0
 
@@ -384,6 +438,7 @@ def main(argv=None) -> int:
         "audience": cmd_audience, "collect": cmd_collect, "ingest": cmd_ingest,
         "timeline": cmd_timeline, "match": cmd_match, "target": cmd_target,
         "actions": cmd_actions, "report": cmd_report, "run": cmd_run,
+        "history": cmd_history,
     }
     for name in cmds:
         p = sub.add_parser(name)
@@ -401,6 +456,8 @@ def main(argv=None) -> int:
                        help="cost: 見積りに使うサンプル人数を上書き")
         p.add_argument("--posts-per-user", type=int, default=None,
                        help="cost: 見積りに使う1人あたり件数を上書き")
+        p.add_argument("--resume", action="store_true",
+                       help="collect/run: 前回の途中から再開（収集済みユーザーは再取得しない）")
 
     args = parser.parse_args(argv)
     try:

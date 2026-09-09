@@ -6,6 +6,7 @@
 data/*.json
 data/*.jsonl
 reports/*.md
+history/
 !examples/**
 
 # python

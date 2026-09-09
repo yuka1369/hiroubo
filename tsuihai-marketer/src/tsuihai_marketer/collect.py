@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 
 from .config import Config
-from .ingest import Post, dedupe, normalize_record
+from .ingest import Post, dedupe, load_posts_jsonl, normalize_record
 from .xclient import XAPIError, XClient
 
 
@@ -61,75 +61,99 @@ def _sample_users_for_segment(x: XClient, seg: Dict[str, Any], quota: int,
 
 def collect_audience(cfg: Config, audience: Dict[str, Any], x: XClient,
                      posts_per_user: int, log,
-                     budget=None, cap_jpy: float = None) -> Dict[str, Any]:
+                     budget=None, cap_jpy: float = None,
+                     resume: bool = False) -> Dict[str, Any]:
     """オーディエンスのサンプリング＋各ユーザーのツイート収集。
 
     budget と cap_jpy を渡すと、実費(円・ユーザー読み取り含む)が上限を超えないよう
-    収集を止める（予算上限）。
+    収集を止める（予算上限）。resume=True なら既存の audience_posts.jsonl /
+    sampled_users.json を読み、途中から続行する（済んだユーザーは再取得しない）。
     """
+    from .config import read_json, write_json
+
     def spent_jpy() -> float:
         return budget.reads_cost_jpy(x.post_reads, x.user_reads) if budget else 0.0
 
-    segments = audience.get("segments", [])
-    sampled_users: List[Dict[str, Any]] = []
-    already: Set[str] = set()
+    posts_path = cfg.path("audience_posts.jsonl")
+    sampled_path = cfg.path("sampled_users.json")
 
-    log("オーディエンスをサンプリング中（recent search）…")
-    for seg in segments:
-        quota = int(seg.get("sample_quota", 0)) or 0
-        if quota <= 0:
-            continue
-        if cap_jpy is not None and spent_jpy() >= cap_jpy:
-            log(f"  予算上限に達したためサンプリング打ち切り（実費 ¥{spent_jpy():,.0f}）")
-            break
-        # この検索で読んでよいツイート数を残予算から算出（1件が新規ユーザーでもある最悪ケースで換算）
-        max_tw = None
-        if cap_jpy is not None and budget is not None:
-            worst_per_tweet = budget.reads_cost_jpy(1, 1)
-            remaining = cap_jpy - spent_jpy()
-            max_tw = int(remaining // worst_per_tweet) if worst_per_tweet > 0 else None
-            if max_tw is not None and max_tw < 10:
+    # ---- サンプリング（resume時は既存の台帳を再利用して検索コストを省く）----
+    sampled_users: List[Dict[str, Any]] = []
+    if resume and sampled_path.exists():
+        sampled_users = (read_json(sampled_path) or {}).get("users", [])
+        log(f"[再開] 既存のサンプリング {len(sampled_users)} 人を再利用（検索スキップ）")
+    else:
+        already: Set[str] = set()
+        log("オーディエンスをサンプリング中（recent search）…")
+        for seg in audience.get("segments", []):
+            quota = int(seg.get("sample_quota", 0)) or 0
+            if quota <= 0:
+                continue
+            if cap_jpy is not None and spent_jpy() >= cap_jpy:
                 log(f"  予算上限に達したためサンプリング打ち切り（実費 ¥{spent_jpy():,.0f}）")
                 break
-        picked = _sample_users_for_segment(x, seg, quota, already, log,
-                                           max_tweets_budget=max_tw)
-        for u in picked:
-            already.add(u["id"])
-        sampled_users.extend(picked)
-        log(f"  {seg.get('id')} {seg.get('name')}: {len(picked)}/{quota} 人")
+            max_tw = None
+            if cap_jpy is not None and budget is not None:
+                worst_per_tweet = budget.reads_cost_jpy(1, 1)
+                remaining = cap_jpy - spent_jpy()
+                max_tw = int(remaining // worst_per_tweet) if worst_per_tweet > 0 else None
+                if max_tw is not None and max_tw < 10:
+                    log(f"  予算上限に達したためサンプリング打ち切り（実費 ¥{spent_jpy():,.0f}）")
+                    break
+            picked = _sample_users_for_segment(x, seg, quota, already, log,
+                                               max_tweets_budget=max_tw)
+            for u in picked:
+                already.add(u["id"])
+            sampled_users.extend(picked)
+            log(f"  {seg.get('id')} {seg.get('name')}: {len(picked)}/{quota} 人")
+        # チェックポイント: サンプリング結果を先に保存（この後落ちても再開できる）
+        write_json(sampled_path, {"product": cfg.product.name, "users": sampled_users})
+
+    # ---- 既に収集済みのユーザーを把握（resume）----
+    posts: List[Post] = []
+    done_authors: Set[str] = set()
+    if resume and posts_path.exists():
+        posts = load_posts_jsonl(posts_path)
+        done_authors = {p.author for p in posts if p.author}
+        log(f"[再開] 収集済み {len(posts)} ツイート / {len(done_authors)} 人 → 残りから続行")
 
     log(f"サンプリング合計: {len(sampled_users)} 人。各ユーザーのツイートを取得中…")
-    posts: List[Post] = []
-    user_index: List[Dict[str, Any]] = []
     stopped = False
     next_cost_jpy = budget.reads_cost_jpy(posts_per_user, 0) if budget else 0.0
-    for i, u in enumerate(sampled_users, 1):
-        # 次の1人分を取ると上限を超えるなら止める
-        if cap_jpy is not None and spent_jpy() + next_cost_jpy > cap_jpy:
-            log(f"  予算上限のためユーザー取得を停止（{i-1}/{len(sampled_users)} 人で打ち切り、"
-                f"実費 ¥{spent_jpy():,.0f}）")
-            stopped = True
-            break
-        try:
-            raw_tweets = x.get_user_timeline(u["id"], max_results=posts_per_user)
-        except XAPIError as e:
-            log(f"  [!] TL取得失敗 @{u['username']}: {e}")
-            raw_tweets = []
-        n = 0
-        for rec in raw_tweets:
-            rec.setdefault("author_username", u["username"])
-            rec.setdefault("author_id", u["id"])
-            p = normalize_record(rec)
-            if p:
-                # segment 情報を保持
-                p.raw["_segment"] = u["segment"]
-                posts.append(p)
-                n += 1
-        user_index.append({**u, "collected_tweets": n})
-        if i % 10 == 0:
-            log(f"  {i}/{len(sampled_users)} 人分 取得済み（累計 {len(posts)} ツイート）")
+    # 1人取れるたびに即ファイルへ追記（途中で止まってもそこまでは残る）
+    posts_path.parent.mkdir(parents=True, exist_ok=True)
+    with posts_path.open("a" if (resume and posts_path.exists()) else "w", encoding="utf-8") as f:
+        for i, u in enumerate(sampled_users, 1):
+            if (u.get("username") or "") in done_authors:
+                continue  # 収集済みはスキップ（再開）
+            if cap_jpy is not None and spent_jpy() + next_cost_jpy > cap_jpy:
+                log(f"  予算上限のためユーザー取得を停止（{i-1}/{len(sampled_users)} 人で打ち切り、"
+                    f"実費 ¥{spent_jpy():,.0f}）")
+                stopped = True
+                break
+            try:
+                raw_tweets = x.get_user_timeline(u["id"], max_results=posts_per_user)
+            except XAPIError as e:
+                log(f"  [!] TL取得失敗 @{u['username']}: {e}")
+                raw_tweets = []
+            for rec in raw_tweets:
+                rec.setdefault("author_username", u["username"])
+                rec.setdefault("author_id", u["id"])
+                p = normalize_record(rec)
+                if p:
+                    p.raw["_segment"] = u["segment"]
+                    posts.append(p)
+                    f.write(json.dumps(p.to_dict(), ensure_ascii=False) + "\n")
+            f.flush()  # 席を離れて落ちてもここまで保存
+            done_authors.add(u.get("username") or "")
+            if i % 5 == 0:
+                log(f"  {i}/{len(sampled_users)} 人分 取得済み（累計 {len(posts)} ツイート・保存済み）")
 
     posts = dedupe(posts)
+    # collected_tweets を数え直して台帳を更新
+    from collections import Counter
+    cnt = Counter(p.author for p in posts)
+    user_index = [{**u, "collected_tweets": cnt.get(u.get("username"), 0)} for u in sampled_users]
     return {"posts": posts, "sampled_users": user_index, "budget_stopped": stopped}
 
 
@@ -172,7 +196,8 @@ def write_posts_jsonl(path: Path, posts: List[Post]) -> None:
 
 def run_collection(cfg: Config, audience: Dict[str, Any], x: XClient,
                    posts_per_user: int, collect_own: bool, log,
-                   budget=None, cap_jpy: float = None) -> Dict[str, Any]:
+                   budget=None, cap_jpy: float = None,
+                   resume: bool = False) -> Dict[str, Any]:
     # 自TL取得分の費用を予約してからオーディエンスの上限を決める
     own_reserve_reads = max(posts_per_user, cfg.raw.get("own_account", {}).get("max_tweets", 100)) \
         if collect_own else 0
@@ -182,24 +207,25 @@ def run_collection(cfg: Config, audience: Dict[str, Any], x: XClient,
         audience_cap_jpy = max(0.0, cap_jpy - own_reserve_jpy)
 
     result = collect_audience(cfg, audience, x, posts_per_user, log,
-                              budget=budget, cap_jpy=audience_cap_jpy)
-    write_posts_jsonl(cfg.path("audience_posts.jsonl"), result["posts"])
-    log(f"→ audience_posts.jsonl ({len(result['posts'])} ツイート / "
-        f"{len(result['sampled_users'])} ユーザー)")
-
-    # サンプリング台帳も残す
+                              budget=budget, cap_jpy=audience_cap_jpy, resume=resume)
+    # collect_audience が逐次追記済み。台帳の collected_tweets を更新して保存
     from .config import write_json
     write_json(cfg.path("sampled_users.json"),
                {"product": cfg.product.name, "users": result["sampled_users"]})
+    log(f"→ audience_posts.jsonl ({len(result['posts'])} ツイート / "
+        f"{len(result['sampled_users'])} ユーザー)")
 
     own_written = 0
-    if collect_own:
+    own_path = cfg.resolve(cfg.own_timeline_file)
+    if collect_own and resume and own_path.exists() and load_posts_jsonl(own_path):
+        own_written = len(load_posts_jsonl(own_path))
+        log(f"[再開] 自TLは取得済み（{own_written} ツイート）→ スキップ")
+    elif collect_own:
         cur_jpy = budget.reads_cost_jpy(x.post_reads, x.user_reads) if budget else 0.0
         # 上限内に自TL分が残っていれば取得
         if cap_jpy is None or cur_jpy + own_reserve_jpy <= cap_jpy:
             own_posts = collect_own_timeline(cfg, x, posts_per_user, log)
             if own_posts:
-                own_path = cfg.resolve(cfg.own_timeline_file)
                 write_posts_jsonl(own_path, own_posts)
                 own_written = len(own_posts)
                 log(f"→ {cfg.own_timeline_file} ({own_written} ツイート)")
