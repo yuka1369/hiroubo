@@ -48,9 +48,90 @@ PORT = int(os.environ.get("PORT") or os.environ.get("TMARK_PORT") or "8787")
 # 公開URLで動かす場合、APP_PASSWORD を設定すると簡易パスワードで保護できる
 APP_PASSWORD = os.environ.get("APP_PASSWORD", "")
 
+# データの永続化先。Cloud Run では GCS バケットをここにマウントする（TMARK_DATA_ROOT）。
+# 未指定ならローカルの ./runs（Cloud Shell/ローカルではホームが永続なので残る）。
+DATA_ROOT = Path(os.environ.get("TMARK_DATA_ROOT") or (Path(__file__).resolve().parent / "runs"))
+LEDGER_PATH = DATA_ROOT / "spend_ledger.json"   # 月次台帳も永続領域に置く
+
 
 def _yen(n) -> str:
     return f"¥{n:,.0f}"
+
+
+_SNAPSHOT_FILES = ("value_elements.json", "audience.json", "audience_posts.jsonl",
+                   "own_timeline.jsonl", "sampled_users.json")
+
+
+def _persist_run(run_id: str, cfg, result: dict, body: dict) -> None:
+    """1回の実行を DATA_ROOT/<run_id>/ に保存（永続化＆履歴）。"""
+    import datetime as _dt
+    dest = DATA_ROOT / run_id
+    dest.mkdir(parents=True, exist_ok=True)
+    # 生データをコピー（あるものだけ）
+    import shutil
+    for name in _SNAPSHOT_FILES:
+        src = cfg.path(name)
+        if src.exists():
+            try:
+                shutil.copy2(src, dest / name)
+            except Exception:
+                pass
+    own = cfg.resolve(cfg.own_timeline_file)
+    if own.exists():
+        try:
+            shutil.copy2(own, dest / "own_timeline.jsonl")
+        except Exception:
+            pass
+    # 結果＋メタを result.json に（履歴の再表示に使う）
+    meta = {
+        "run_id": run_id,
+        "product": (body.get("product") or {}).get("name", ""),
+        "own_handle": body.get("own_handle", ""),
+        "sample_size": int(body.get("sample_size", 20)),
+        "posts_per_user": int(body.get("posts_per_user", 10)),
+        "at": _dt.datetime.now().isoformat(timespec="seconds"),
+    }
+    payload = dict(result)
+    payload["meta"] = meta
+    payload.pop("logs", None)  # ログは保存しない
+    write_json(dest / "result.json", payload)
+
+
+def _list_history(limit: int = 50) -> list:
+    """DATA_ROOT 配下の過去実行を新しい順に一覧。"""
+    if not DATA_ROOT.exists():
+        return []
+    out = []
+    for d in sorted([p for p in DATA_ROOT.iterdir() if p.is_dir()], reverse=True):
+        rj = d / "result.json"
+        if not rj.exists():
+            continue
+        try:
+            r = read_json(rj)
+        except Exception:
+            continue
+        meta = r.get("meta", {})
+        out.append({
+            "run_id": d.name,
+            "product": meta.get("product", ""),
+            "own_handle": meta.get("own_handle", ""),
+            "at": meta.get("at", ""),
+            "n_users": r.get("n_users", len(r.get("targets", []))),
+            "cost_jpy": (r.get("cost") or {}).get("jpy", 0),
+        })
+        if len(out) >= limit:
+            break
+    return out
+
+
+def _get_history_run(run_id: str) -> dict:
+    """保存済みの1実行の結果を返す。"""
+    if "/" in run_id or ".." in run_id:
+        raise ValueError("bad run_id")
+    rj = DATA_ROOT / run_id / "result.json"
+    if not rj.exists():
+        raise FileNotFoundError("履歴が見つかりません")
+    return read_json(rj)
 
 
 def run_pipeline(body: dict, log) -> dict:
@@ -96,8 +177,9 @@ def run_pipeline(body: dict, log) -> dict:
     }
     cfg_path = run_dir / "config.json"
     write_json(cfg_path, cfg_dict)
-    # 月次台帳は作業ディレクトリ横断で共有したいので固定パスを使う
-    ledger_path = Path(__file__).resolve().parent / "data" / "spend_ledger.json"
+    # 月次台帳は永続領域に置く（Cloud Runでもリクエストをまたいで累積する）
+    ledger_path = LEDGER_PATH
+    ledger_path.parent.mkdir(parents=True, exist_ok=True)
 
     cfg = load_config(str(cfg_path))
     llm = LLMClient(LLMConfig.from_dict(cfg.llm))
@@ -138,8 +220,11 @@ def run_pipeline(body: dict, log) -> dict:
     targets = build_targets(cfg, own_posts, audience_posts, values, llm,
                             top_k=8, sampled_users=sampled, generate=llm.available)
 
-    return {
+    import datetime as _dt
+    run_id = _dt.datetime.now().strftime("%Y%m%d-%H%M%S")
+    result = {
         "ok": True,
+        "run_id": run_id,
         "cost": {"jpy": round(spent_jpy, 1), "post_reads": x.post_reads,
                  "user_reads": x.user_reads,
                  "month_total_jpy": round(month_spent_jpy(load_ledger(ledger_path)), 1),
@@ -149,6 +234,19 @@ def run_pipeline(body: dict, log) -> dict:
         "n_users": targets.get("n_users", 0),
         "method": targets.get("method"),
     }
+    # 永続化＋履歴に保存（Cloud Run では GCS マウント先に残る）
+    try:
+        _persist_run(run_id, cfg, result, body)
+        log(f"保存しました（履歴ID {run_id}）")
+    except Exception as e:
+        log(f"（保存に失敗: {e}）")
+    # 作業用一時ディレクトリは掃除
+    try:
+        import shutil
+        shutil.rmtree(run_dir, ignore_errors=True)
+    except Exception:
+        pass
+    return result
 
 
 # --------------------------------------------------------------------------
@@ -165,14 +263,30 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(data)
 
     def do_GET(self):
-        if self.path in ("/", "/index.html"):
+        from urllib.parse import urlparse, parse_qs
+        parsed = urlparse(self.path)
+        path = parsed.path
+        if path in ("/", "/index.html"):
             self._send(200, PAGE, "text/html; charset=utf-8")
-        elif self.path == "/health":
+        elif path == "/health":
             env = {"X_BEARER_TOKEN": bool(os.environ.get("X_BEARER_TOKEN")),
                    "XAI_API_KEY": bool(os.environ.get("XAI_API_KEY")),
                    "ANTHROPIC_API_KEY": bool(os.environ.get("ANTHROPIC_API_KEY"))}
             self._send(200, json.dumps({"ok": True, "env": env,
-                                        "password_required": bool(APP_PASSWORD)}))
+                                        "password_required": bool(APP_PASSWORD),
+                                        "persist": str(DATA_ROOT)}))
+        elif path == "/api/history":
+            try:
+                self._send(200, json.dumps({"ok": True, "runs": _list_history()},
+                                           ensure_ascii=False))
+            except Exception as e:
+                self._send(200, json.dumps({"ok": False, "error": str(e)}))
+        elif path == "/api/run":
+            run_id = (parse_qs(parsed.query).get("id") or [""])[0]
+            try:
+                self._send(200, json.dumps(_get_history_run(run_id), ensure_ascii=False))
+            except Exception as e:
+                self._send(200, json.dumps({"ok": False, "error": str(e)}))
         else:
             self._send(404, json.dumps({"error": "not found"}))
 
@@ -301,6 +415,14 @@ textarea{min-height:64px;resize:vertical}
 
 <div id="results"></div>
 
+<div class="panel" id="histPanel">
+  <div style="display:flex;justify-content:space-between;align-items:center">
+    <strong>🕘 過去の実行（履歴）</strong>
+    <button class="small" id="histReload" style="background:none;border:1px solid var(--line);border-radius:8px;padding:5px 10px;cursor:pointer;color:var(--accent-strong)">更新</button>
+  </div>
+  <div id="histList" class="small" style="margin-top:8px">読み込み中…</div>
+</div>
+
 <script>
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -324,9 +446,32 @@ $("run").addEventListener("click", async ()=>{
     log.textContent=(d.logs||[]).join("\n");
     if(!d.ok){ log.innerHTML+="\n<span class='err'>エラー: "+esc(d.error)+"</span>"; btn.disabled=false; return; }
     render(d);
+    loadHistory();   // 実行後に履歴を更新
   }catch(e){ log.innerHTML="<span class='err'>通信エラー: "+esc(e.message)+"</span>"; }
   btn.disabled=false;
 });
+
+// ---- 履歴（永続化された過去の実行）----
+async function loadHistory(){
+  const el=$("histList");
+  try{
+    const r=await fetch("/api/history"); const d=await r.json();
+    if(!d.ok||!d.runs||!d.runs.length){ el.textContent="まだ履歴はありません。実行すると自動で保存されます。"; return; }
+    el.innerHTML=d.runs.map(h=>`<div class="histitem" data-id="${esc(h.run_id)}" style="cursor:pointer;padding:9px 11px;border:1px solid var(--line);border-radius:9px;margin-top:6px">
+      <b>${esc(h.at||h.run_id)}</b> — ${esc(h.product||"")} ${h.own_handle?("/ @"+esc(String(h.own_handle).replace(/^@/,""))):""}
+      <span class="mono" style="color:var(--muted)">· ${h.n_users}人 · ¥${(h.cost_jpy||0).toLocaleString()}</span></div>`).join("");
+    el.querySelectorAll(".histitem").forEach(it=>it.addEventListener("click",()=>openHistory(it.dataset.id)));
+  }catch(e){ el.textContent="履歴の取得に失敗: "+e.message; }
+}
+async function openHistory(id){
+  try{
+    const r=await fetch("/api/run?id="+encodeURIComponent(id)); const d=await r.json();
+    if(!d.ok){ alert("読み込めません: "+(d.error||"")); return; }
+    render(d); window.scrollTo({top:0,behavior:"smooth"});
+  }catch(e){ alert("エラー: "+e.message); }
+}
+$("histReload").addEventListener("click", loadHistory);
+loadHistory();
 function render(d){
   const c=d.cost||{};
   let html=`<div class="panel"><div class="cost">実費 ¥${(c.jpy||0).toLocaleString()} `+

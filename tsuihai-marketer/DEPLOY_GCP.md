@@ -64,13 +64,39 @@ gcloud run deploy tsuihai-marketer \
 
 ---
 
-## 予算の注意（クラウド特有）
+## 💾 データを永続化する（実行結果・履歴・月次台帳を残す）
+
+Cloud Run はディスクが毎回リセットされるので、そのままだと収集データや履歴が消えます。
+**GCS バケットをマウント**して永続化します。環境変数 `TMARK_DATA_ROOT` をそのマウント先に向けると、
+アプリは実行ごとに `TMARK_DATA_ROOT/<日時>/` に結果を保存し、画面下の「履歴」から過去の実行を再表示できます。
+月次予算の台帳もここに置かれ、リクエストをまたいで正しく累積します。
+
+### 1. バケットを作る（世界で一意な名前に）
+```bash
+gcloud storage buckets create gs://tsuihai-krokodama-data --location=asia-northeast1
+```
+
+### 2. バケットをマウントしてデプロイ
+```bash
+PW='好きな合言葉'
+XT='あなたのBearer'
+gcloud run deploy tsuihai-marketer \
+  --source . --region asia-northeast1 --allow-unauthenticated \
+  --memory 512Mi --cpu 1 --timeout 900 \
+  --add-volume=name=tmarkdata,type=cloud-storage,bucket=tsuihai-krokodama-data \
+  --add-volume-mount=volume=tmarkdata,mount-path=/data \
+  --set-env-vars TMARK_HOST=0.0.0.0,TMARK_DATA_ROOT=/data,APP_PASSWORD=$PW,X_BEARER_TOKEN=$XT
+```
+
+これで、サイトで実行した結果は GCS バケットに残り、**履歴として何度でも見返せます**。
+（バケットへのアクセス権が足りないとデプロイ後にエラーになる場合があります。その時は
+Cloud Run のサービスアカウントにそのバケットの「Storage オブジェクト管理者」を付与してください。）
+
+## 予算の注意
 
 - **1回あたりの上限（`per_run_limit_jpy`）は毎回きっちり効きます**（収集中の実費を監視して自動停止）。
-  これは画面のフォームで指定する上限で、クラウドでも有効です。
-- **月あたりの上限**は、Cloud Run はディスクが毎回リセットされるため**リクエストをまたいで
-  累積しません**（月次台帳が保存されない）。当面は「1回の上限 × 実行回数」で管理してください。
-  月次を厳密に持たせたい場合は GCS か Firestore に台帳を置く拡張が必要です（希望あれば対応します）。
+- **月あたりの上限**も、上のGCSマウントで台帳を永続化すれば**リクエストをまたいで累積**します
+  （マウント無しだと毎回リセットされ月次は効きません）。
 
 ---
 
