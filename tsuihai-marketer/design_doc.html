@@ -1,0 +1,214 @@
+<title>ツイ廃マーケター 設計書</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@500;700;900&family=Murecho:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap">
+<style>
+:root{
+  --bg:#F5F7F9; --surface:#FFFFFF; --surface-2:#EDF1F5; --ink:#151A21; --muted:#5F6A79;
+  --line:#DEE4EC; --accent:#0A9BA8; --accent-strong:#06727C; --accent-soft:rgba(10,155,168,.12);
+  --network:#D9733F; --network-soft:rgba(217,115,63,.14); --good:#2E9E67; --no:#C0563B;
+  --shadow:0 1px 2px rgba(20,30,45,.04),0 8px 28px rgba(20,30,45,.06); --r:14px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0C0F13; --surface:#151A21; --surface-2:#1D242D; --ink:#E7EDF4; --muted:#93A0B1;
+  --line:#28303B; --accent:#26BECB; --accent-strong:#63D6DF; --accent-soft:rgba(38,190,203,.16);
+  --network:#EE9366; --network-soft:rgba(238,147,102,.18); --good:#4EBE85; --no:#F0866A;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35);
+}}
+:root[data-theme="dark"]{
+  --bg:#0C0F13; --surface:#151A21; --surface-2:#1D242D; --ink:#E7EDF4; --muted:#93A0B1;
+  --line:#28303B; --accent:#26BECB; --accent-strong:#63D6DF; --accent-soft:rgba(38,190,203,.16);
+  --network:#EE9366; --network-soft:rgba(238,147,102,.18); --good:#4EBE85; --no:#F0866A;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box} html,body{margin:0}
+body{background:var(--bg); color:var(--ink); font-family:"Murecho",system-ui,sans-serif;
+  line-height:1.7; -webkit-font-smoothing:antialiased}
+.wrap{max-width:840px; margin:0 auto; padding:30px 20px 72px}
+h1,h2,h3{font-family:"Zen Kaku Gothic New",system-ui,sans-serif; text-wrap:balance; margin:0}
+.mono{font-family:"Space Mono",ui-monospace,monospace}
+.eyebrow{font-family:"Space Mono",monospace; font-size:12px; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--accent-strong); margin-bottom:10px}
+h1{font-size:clamp(27px,4.6vw,38px); font-weight:900; line-height:1.12}
+.sub{color:var(--muted); font-size:15px; margin-top:12px}
+h2{font-size:19px; font-weight:700; margin:40px 0 4px; padding-top:16px; border-top:1px solid var(--line)}
+.kicker{font-family:"Space Mono",monospace; font-size:12px; color:var(--accent-strong); letter-spacing:.08em}
+h3{font-size:15px; font-weight:700; margin:20px 0 6px}
+p{margin:9px 0}
+ul{margin:8px 0; padding-left:20px} li{margin:4px 0}
+code{font-family:"Space Mono",monospace; background:var(--surface-2); padding:1px 6px; border-radius:5px; font-size:.9em}
+.cardrow{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:14px 0}
+@media(max-width:600px){.cardrow{grid-template-columns:1fr}}
+.card{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:14px 16px; box-shadow:var(--shadow)}
+.card h3{margin-top:0}
+.card.no{border-left:4px solid var(--no)} .card.yes{border-left:4px solid var(--good)}
+.label{font-family:"Space Mono",monospace; font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted)}
+table{width:100%; border-collapse:collapse; margin:14px 0; font-size:13.5px}
+th,td{text-align:left; padding:9px 10px; border-bottom:1px solid var(--line); vertical-align:top}
+th{font-family:"Space Mono",monospace; font-size:11px; letter-spacing:.05em; text-transform:uppercase; color:var(--muted)}
+td.mod{font-family:"Space Mono",monospace; font-weight:700; color:var(--accent-strong); white-space:nowrap}
+figure{margin:18px 0; background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:18px 16px 12px; box-shadow:var(--shadow)}
+figure svg{display:block; width:100%; height:auto; color:var(--ink)}
+figcaption{font-size:12.5px; color:var(--muted); margin-top:12px; text-align:center; line-height:1.5}
+.pill{display:inline-block; font-size:11.5px; font-family:"Space Mono",monospace; padding:2px 9px; border-radius:999px}
+.pill.share{background:var(--accent-soft); color:var(--accent-strong)}
+.pill.deliver{background:var(--network-soft); color:var(--network)}
+.note{font-size:13.5px; color:var(--muted); background:var(--surface-2); border-radius:10px; padding:12px 14px; margin:14px 0}
+footer{margin-top:44px; padding-top:18px; border-top:1px solid var(--line); color:var(--muted); font-size:12.5px}
+.toggle{position:fixed; top:14px; right:14px; z-index:10; background:var(--surface); border:1px solid var(--line);
+  color:var(--muted); border-radius:999px; width:38px; height:38px; cursor:pointer; font-size:16px; box-shadow:var(--shadow)}
+.toggle:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+</style>
+
+<button class="toggle" id="themeToggle" aria-label="テーマ切替">◐</button>
+<div class="wrap">
+  <div class="eyebrow">ツイ廃マーケター / requirements &amp; design</div>
+  <h1>要件定義 と 設計書</h1>
+  <p class="sub">「作りたいプロダクトの価値を欲しがる人を X 上で見つけ、その人のTLに一番溶け込む自分の過去ツイートをTOP出しする」ツールの、
+    やること・組み立て方・配達方法を1枚にまとめたもの。</p>
+
+  <!-- ===== 要件定義 ===== -->
+  <h2><span class="kicker">01 — REQUIREMENTS</span><br>要件定義：何を作るか</h2>
+
+  <h3>🎯 目的・ユーザー</h3>
+  <ul>
+    <li><b>目的</b>：プロダクトの価値に反応しそうな X ユーザーを見つけ、刺さる自ツイートと届け方を提示する</li>
+    <li><b>ユーザー</b>：自分のプロダクトを X で広めたい個人（＝あなた）。まずは自分用の分析ツール</li>
+  </ul>
+
+  <h3>✅ やること（機能要件）</h3>
+  <ul>
+    <li>① 価値抽出：プロダクト説明 → 価値要素（機能/情緒/社会）</li>
+    <li>② オーディエンス設計：価値を欲する層＋X検索クエリ＋人数</li>
+    <li>③ 収集：X API で該当ユーザーとツイートを取得（自分のTLも）</li>
+    <li>④ タイムライン予測：層ごとの話題・型・エンゲージ統計</li>
+    <li>⑤ ユーザー別TOP出し：自ツイートを類似度＋ネットワークで並べる（中核）</li>
+    <li>⑥ アクション：表示率を上げる施策（Xアルゴリズム準拠）</li>
+  </ul>
+
+  <h3>⚙️ 品質・制約（非機能要件）</h3>
+  <ul>
+    <li><b>予算</b>：円建てで上限、実費が超える前に自動停止（従量課金の暴発防止）</li>
+    <li><b>永続化・履歴</b>：結果を保存し、過去の実行を見返せる</li>
+    <li><b>再開</b>：途中で落ちても続きから（席を離れても安全）</li>
+    <li><b>日本語</b>：形態素解析なしで動く（文字bigram）／依存パッケージ0</li>
+    <li><b>安全</b>：APIキーは端末/サーバ内だけ、公開URLは合言葉で保護</li>
+  </ul>
+
+  <div class="cardrow">
+    <div class="card no"><span class="label">やらないこと（スコープ外）</span>
+      <ul style="margin-bottom:0">
+        <li>自動投稿・自動フォロー等の自動化</li>
+        <li>非公開情報の取得・大量スクレイピング</li>
+        <li>個人の狙い撃ち・迷惑行為</li>
+      </ul>
+    </div>
+    <div class="card yes"><span class="label">前提・依存</span>
+      <ul style="margin-bottom:0">
+        <li>X API（従量課金）＝収集の実データ源</li>
+        <li>Grok/Claude（任意）＝価値抽出・生成の精度向上</li>
+        <li>公開ツイートのみ・規約と法令の範囲で利用</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ===== 設計 ===== -->
+  <h2><span class="kicker">02 — DESIGN</span><br>設計：どう組み立てるか</h2>
+
+  <p>ポイントは<b>「頭脳」と「配達」を分けて設計</b>すること。分析の中身は同じまま、届け方（手元アプリ／クラウド）だけ差し替えられるようにしてある。</p>
+
+  <figure>
+    <svg viewBox="0 0 520 300" role="img" aria-label="4層のレイヤー図。上2層（頭脳＝分析ロジックと、UI＝画面）は配達方法によらず共通。下2層（保存＝データの置き場所と、配達＝どう届けるか）は、ダウンロード式かクラウドかで変わる。">
+      <g font-family="Murecho, sans-serif">
+        <!-- 共通ラベル -->
+        <text x="12" y="60" font-size="11" fill="var(--accent-strong)" font-family="Space Mono, monospace">共通</text>
+        <text x="12" y="72" font-size="9" fill="var(--muted)" font-family="Space Mono, monospace">どちらも同じ</text>
+        <!-- 変わるラベル -->
+        <text x="12" y="210" font-size="11" fill="var(--network)" font-family="Space Mono, monospace">変わる</text>
+        <text x="12" y="222" font-size="9" fill="var(--muted)" font-family="Space Mono, monospace">配達で違う</text>
+
+        <!-- Layer 1: 頭脳 -->
+        <rect x="120" y="20" width="388" height="56" rx="10" fill="var(--accent-soft)" stroke="var(--accent)"/>
+        <text x="136" y="44" font-size="13.5" font-weight="700" fill="var(--accent-strong)">① 頭脳（分析ロジック）</text>
+        <text x="136" y="63" font-size="11" fill="var(--accent-strong)" opacity=".85">TF-IDF・コサイン類似度・TOP出し・予算計算 … このプロダクトの価値そのもの</text>
+
+        <!-- Layer 2: UI -->
+        <rect x="120" y="84" width="388" height="50" rx="10" fill="var(--surface-2)" stroke="currentColor" stroke-opacity=".3"/>
+        <text x="136" y="106" font-size="13.5" font-weight="700" fill="currentColor">② UI（画面・入力/表示）</text>
+        <text x="136" y="123" font-size="11" fill="currentColor" opacity=".7">プロダクト入力・結果表示・履歴。ほぼ共通の考え方</text>
+
+        <!-- divider -->
+        <line x1="120" y1="150" x2="508" y2="150" stroke="currentColor" stroke-opacity=".25" stroke-dasharray="4 4"/>
+
+        <!-- Layer 3: 保存 -->
+        <rect x="120" y="164" width="388" height="50" rx="10" fill="var(--network-soft)" stroke="var(--network)"/>
+        <text x="136" y="186" font-size="13.5" font-weight="700" fill="var(--network)">③ 保存（データの置き場所）</text>
+        <text x="136" y="203" font-size="11" fill="var(--network)" opacity=".85">手元＝端末ディスク ／ クラウド＝GCSバケット（外部）</text>
+
+        <!-- Layer 4: 配達 -->
+        <rect x="120" y="222" width="388" height="56" rx="10" fill="var(--network-soft)" stroke="var(--network)"/>
+        <text x="136" y="245" font-size="13.5" font-weight="700" fill="var(--network)">④ 配達（どう届けるか）</text>
+        <text x="136" y="264" font-size="11" fill="var(--network)" opacity=".85">手元＝ダブルクリック起動 ／ クラウド＝Cloud RunでURL公開</text>
+      </g>
+    </svg>
+    <figcaption><b>上2層（頭脳・UI）は配達方法によらず同じ</b>。手元アプリ⇄クラウドで<b>変わるのは下2層（保存・配達）だけ</b>。
+      だから設定1つで保存先を差し替えられる＝良い「論理分離」。</figcaption>
+  </figure>
+
+  <h3>モジュール構成</h3>
+  <table>
+    <thead><tr><th>モジュール</th><th>役割</th><th>層</th></tr></thead>
+    <tbody>
+      <tr><td class="mod">textutil</td><td>日本語トークナイズ・TF-IDF・コサイン類似度</td><td>頭脳</td></tr>
+      <tr><td class="mod">value_extraction</td><td>①価値抽出（LLM/ヒューリスティック）</td><td>頭脳</td></tr>
+      <tr><td class="mod">audience</td><td>②オーディエンス設計・検索クエリ生成</td><td>頭脳</td></tr>
+      <tr><td class="mod">xclient / collect</td><td>③X API収集・予算監視・途中保存/再開</td><td>頭脳+保存</td></tr>
+      <tr><td class="mod">timeline_predict</td><td>④タイムライン予測</td><td>頭脳</td></tr>
+      <tr><td class="mod">targeting</td><td>⑤ユーザー別TOP出し・reach_score</td><td>頭脳</td></tr>
+      <tr><td class="mod">actions / report</td><td>⑥施策・レポート生成</td><td>頭脳</td></tr>
+      <tr><td class="mod">budget</td><td>円建て見積り・上限・月次台帳</td><td>頭脳+保存</td></tr>
+      <tr><td class="mod">config</td><td>設定・保存パスの解決（差し替え点）</td><td>保存</td></tr>
+      <tr><td class="mod">tmark.py</td><td>CLI（コマンドで実行）</td><td>UI+配達</td></tr>
+      <tr><td class="mod">tmark_web.py</td><td>Webアプリ（画面で実行）・履歴・永続化</td><td>UI+配達</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ===== 配達方式の比較 ===== -->
+  <h2><span class="kicker">03 — DELIVERY</span><br>配達方式の比較：手元アプリ vs クラウド</h2>
+  <table>
+    <thead><tr><th>観点</th><th>ダウンロード式（手元）</th><th>クラウド（Web）</th></tr></thead>
+    <tbody>
+      <tr><td>保存(永続化)</td><td>端末ディスクに自動で残る（分離不要）</td><td>外部ストレージが必要（GCSバケット）</td></tr>
+      <tr><td>いつ使える</td><td>端末を開いた時だけ</td><td>URLで24時間・他端末/他人も</td></tr>
+      <tr><td>共有</td><td>その端末の中だけ</td><td>URLを渡すだけ</td></tr>
+      <tr><td>更新</td><td>各端末で入れ直し</td><td>デプロイ1回で全員に反映</td></tr>
+      <tr><td>作る/運用の難しさ</td><td><b style="color:var(--good)">やさしい</b>（デプロイ・課金なし）</td><td>やや高い（デプロイ・課金・監視・セキュリティ）</td></tr>
+      <tr><td>初心者向き</td><td><b style="color:var(--good)">◎（自分用なら最適）</b></td><td>△（共有・配布が要るなら）</td></tr>
+    </tbody>
+  </table>
+  <div class="note">
+    💡 <b>指針</b>：<b>自分用・その端末で使えればOK</b> ＝ ダウンロード式が一番シンプル（バケットもデプロイも不要）。
+    <b>常時URLで共有・人に配りたい</b> ＝ クラウド（保存の分離が必要）。<b>中身（頭脳）は完成済みでどちらにも流用可能</b>。
+  </div>
+
+  <h3>ミニ用語</h3>
+  <ul style="font-size:13.5px">
+    <li><b>永続化</b>：電源やインスタンスが変わってもデータが消えず残ること</li>
+    <li><b>ステートレス</b>：計算する箱が状態(データ)を持たない設計。だから保存は外に置く</li>
+    <li><b>論理分離</b>：データ層とロジックを分けること。保存先を差し替えても中身を変えずに済む</li>
+    <li><b>要件定義</b>：作る前に「何を・誰に・どこまで(やらないことも)」を決めること</li>
+  </ul>
+
+  <footer>
+    ツイ廃マーケター 要件定義＋設計書（1枚版）。頭脳＝TF-IDF＋コサイン類似度、収集＝X API（予算内で自動停止）。
+    手元アプリ／クラウドは配達層のみが異なる。
+  </footer>
+</div>
+
+<script>
+const root=document.documentElement;
+document.getElementById("themeToggle").onclick=()=>{const cur=root.getAttribute("data-theme");
+  const sys=matchMedia("(prefers-color-scheme:dark)").matches; const now=cur||(sys?"dark":"light");
+  root.setAttribute("data-theme", now==="dark"?"light":"dark");};
+</script>
